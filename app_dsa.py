@@ -25,6 +25,10 @@ st.set_page_config(
 # Paleta de colores DSA (Fondo Negro, Acentos en Azul de Carrera y Naranja Enérgico)
 st.markdown("""
     <style>
+    /* Ocultar cabecera, menú de opciones y marca de agua de Streamlit */
+        [data-testid="stHeader"] {visibility: hidden;}
+        [data-testid="stToolbar"] {visibility: hidden;}
+        footer {visibility: hidden;}
         /* Fondo Principal Oscuro / Negro */
         .stApp {
             background-color: #0c0f17;
