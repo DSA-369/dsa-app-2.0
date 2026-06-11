@@ -131,16 +131,12 @@ else:
 # ==========================================
 # 3. CARGA DE LOGO REAL DE LA DSA
 # ==========================================
-try:
-    if os.path.exists("image_e62efc.png"):
-        st.sidebar.image("image_e62efc.png", use_container_width=True)
-    else:
-        st.sidebar.markdown("<h2 style='color:#ff7a00; text-align:center;'>🏁 DSA 2.0</h2>", unsafe_allow_html=True)
-except Exception:
-    st.sidebar.markdown("<h2 style='color:#ff7a00; text-align:center;'>🏁 DSA 2.0</h2>", unsafe_allow_html=True)
+# Traer el logo directamente desde Supabase
+LOGO_URL = "https://gaxnteisqvvkjavhtmgm.supabase.co/storage/v1/object/public/directorio-partners/SPOND36.PNG"
+st.sidebar.image(LOGO_URL, use_container_width=True)
 
+# La línea divisoria debajo del logo
 st.sidebar.markdown("<hr style='border: 1px solid #1e293b;'/>", unsafe_allow_html=True)
-
 # ==========================================
 # 4. NAVEGACIÓN MODULAR (RANKING EN SEGUNDO LUGAR)
 # ==========================================
