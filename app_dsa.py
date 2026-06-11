@@ -25,10 +25,15 @@ st.set_page_config(
 # Paleta de colores DSA (Fondo Negro, Acentos en Azul de Carrera y Naranja Enérgico)
 st.markdown("""
     <style>
-    /* Ocultar cabecera, menú de opciones y marca de agua de Streamlit */
-        [data-testid="stHeader"] {visibility: hidden;}
+    /* ELIMINAMOS O COMENTAMOS LA LÍNEA DEL STHEADER */
+        /* [data-testid="stHeader"] {visibility: hidden;} <--- BORRA ESTA LÍNEA */
+        
+        /* MANTENEMOS ESTAS PARA EL LOOK PROFESIONAL */
         [data-testid="stToolbar"] {visibility: hidden;}
         footer {visibility: hidden;}
+        
+        /* Opcional: Si quieres que el header sea transparente para que no desentone */
+        header {background: rgba(0,0,0,0) !important;}
         /* Fondo Principal Oscuro / Negro */
         .stApp {
             background-color: #0c0f17;
