@@ -470,21 +470,25 @@ def resolver_ruta_imagen(ruta_raw):
     # Si no encontró nada, devolvemos None
     return None
 # ==========================================
-# MODULO: MAESTRO DE CORREDORES + AUTENTICACIÓN PRO (CORREGIDO)
+# MODULO: MAESTRO DE CORREDORES (VERSIÓN FOTOS HD REAL-TIME)
 # ==========================================
 if "👥 Maestro de Corredores" in opcion_menu:
     import datetime
+    import time
 
-    # 1. Inicialización de interruptores de pantalla en la memoria de la App
+    # Inicialización de interruptores de pantalla y VERSIÓN DE CACHÉ
     if "mostrar_registro_rider" not in st.session_state:
         st.session_state.mostrar_registro_rider = False
     if "mostrar_perfil_rider" not in st.session_state:
         st.session_state.mostrar_perfil_rider = False
     if "rider_autenticado" not in st.session_state:
         st.session_state.rider_autenticado = None
+    # 🚀 TRUCO MAESTRO: Control de caché para actualización instantánea de fotos
+    if "version_fotos" not in st.session_state:
+        st.session_state.version_fotos = 1
 
     # =======================================================
-    # PANTALLA A: FORMULARIO DE REGISTRO (CON NUEVA CONTRASEÑA)
+    # PANTALLA A: FORMULARIO DE REGISTRO
     # =======================================================
     if st.session_state.mostrar_registro_rider:
         st.markdown("### 📝 Inscripción Oficial de Corredor")
@@ -540,8 +544,13 @@ if "👥 Maestro de Corredores" in opcion_menu:
                         
                     if foto_archivo:
                         try:
-                            supabase.storage.from_("riders-photos").upload(file=foto_archivo.getvalue(), path=f"{id_formateado}.jpeg", file_options={"content-type": foto_archivo.type, "x-upsert": "true"})
-                        except Exception as e: pass
+                            supabase.storage.from_("riders-photos").upload(
+                                file=foto_archivo.getvalue(), 
+                                path=f"{id_formateado}.jpeg", 
+                                file_options={"content-type": foto_archivo.type, "x-upsert": "true"}
+                            )
+                        except Exception as e:
+                            st.warning(f"Aviso de almacenamiento de imagen: {e}")
 
                     nuevo_registro = {
                         "id_rider": id_formateado,  
@@ -565,7 +574,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
                         st.session_state.mostrar_registro_rider = False
                         st.rerun()
                     except Exception as e:
-                        st.error(f"Error: {e}")
+                        st.error(f"Error al guardar datos: {e}")
 
     # =======================================================
     # PANTALLA C: INTERFAZ AUTÓNOMA "MI PERFIL DSA" (LOGIN / EDICIÓN)
@@ -577,7 +586,6 @@ if "👥 Maestro de Corredores" in opcion_menu:
             st.session_state.mostrar_perfil_rider = False
             st.rerun()
 
-        # CASO C1: EL USUARIO NO SE HA LOGUEADO (MOSTRAR LOGIN)
         if st.session_state.rider_autenticado is None:
             st.markdown("#### 🔑 Iniciar Sesión de Atleta")
             col_l1, col_l2 = st.columns(2)
@@ -616,7 +624,6 @@ if "👥 Maestro de Corredores" in opcion_menu:
                         except Exception as e:
                             st.error(f"Error de conexión con el servidor: {e}")
 
-        # CASO C2: USUARIO EN LÍNEA (EDICIÓN TOTALMENTE BLINDADA CONTRA NULOS)
         else:
             rider = st.session_state.rider_autenticado
             st.markdown(f"#### 🛠️ Editando el Perfil de: **{rider.get('id_rider')}**")
@@ -649,7 +656,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
                     edit_ciudad = st.text_input("Ciudad / Estado *", value=str(e_inicial)).strip().upper()
                     edit_fecha = st.date_input("Fecha de Nacimiento", value=f_inicial, min_value=datetime.date(1926, 1, 1))
                 
-                with col_e2: # <-- CORREGIDO: Uso estricto de la columna de edición interna
+                with col_e2: 
                     edit_correo = st.text_input("Correo Electrónico *", value=str(rider.get('correo') or '')).strip()
                     edit_pass = st.text_input("Cambiar Contraseña *", value=str(rider.get('password') or ''), type="password").strip()
                     edit_tel = st.text_input("Teléfono de Contacto", value=str(rider.get('telefono') or '')).strip()
@@ -666,7 +673,6 @@ if "👥 Maestro de Corredores" in opcion_menu:
                 st.write("📸 **Actualizar Foto de Perfil** (Dejar vacío si deseas conservar tu foto actual)")
                 nueva_foto = st.file_uploader("Subir nueva imagen cuadrada (JPG / PNG)", type=['jpg', 'jpeg', 'png'], key="update_photo_loader")
 
-                # El botón de confirmación ahora se ejecutará siempre de forma limpia
                 submit_edicion = st.form_submit_button("💾 Guardar y Actualizar mis Datos")
 
                 if submit_edicion:
@@ -678,10 +684,17 @@ if "👥 Maestro de Corredores" in opcion_menu:
                             edit_insta_limpio = f"https://www.instagram.com/{edit_insta_limpio}/"
 
                         id_rider_actual = rider.get('id_rider')
+                        
+                        # 🚀 MEJORA SUBIDA: Eliminamos el silencio y forzamos x-upsert explícito
                         if nueva_foto:
                             try:
-                                supabase.storage.from_("riders-photos").upload(file=nueva_foto.getvalue(), path=f"{id_rider_actual}.jpeg", file_options={"content-type": nueva_foto.type, "x-upsert": "true"})
-                            except: pass
+                                supabase.storage.from_("riders-photos").upload(
+                                    file=nueva_foto.getvalue(), 
+                                    path=f"{id_rider_actual}.jpeg", 
+                                    file_options={"content-type": nueva_foto.type, "x-upsert": "true"}
+                                )
+                            except Exception as img_err:
+                                st.error(f"⚠️ Error de Supabase al sobrescribir la foto: {img_err}")
 
                         datos_actualizados = {
                             "nombre": edit_nombre,
@@ -697,6 +710,10 @@ if "👥 Maestro de Corredores" in opcion_menu:
 
                         try:
                             supabase.table("riders_master").update(datos_actualizados).eq("id_rider", id_rider_actual).execute()
+                            
+                            # 🚀 ACCIÓN REFRESH: Cambiamos el token de versión para romper la caché del navegador
+                            st.session_state.version_fotos += 1
+                            
                             st.success("🎉 ¡Tu perfil ha sido actualizado con éxito!")
                             st.session_state.rider_autenticado.update(datos_actualizados)
                             time.sleep(1.5)
@@ -755,12 +772,17 @@ if "👥 Maestro de Corredores" in opcion_menu:
 
             df_riders["Codigo_Texto"] = df_riders["id_rider"].apply(mapear_codigo_texto)
 
+            # 🚀 SOLUCIÓN CACHÉ: Inyectamos el número de versión dinámico a la URL de la imagen
+            v_actual = st.session_state.version_fotos
+            df_riders["Foto_Con_Version"] = df_riders["foto_url"].apply(lambda url: f"{url}?v={v_actual}" if url else url)
+
             orden_categorias = ["Open Skate", "Femenino Skate", "Junior Skate", "Master Skate", "Open Inline", "Femenino Inline", "Junior Inline"]
             df_riders['categoria_base'] = df_riders['categoria_base'].fillna("Sin Categoría")
             df_riders['categoria_cat'] = pd.Categorical(df_riders['categoria_base'], categories=orden_categorias, ordered=True)
             df_riders = df_riders.sort_values(['categoria_cat', 'nombre'])
             
-            df_vista = df_riders[["foto_url", "Codigo_Texto", "nombre", "Bandera_URL", "Estado_Limpio", "categoria_base", "instagram", "total_eventos"]].copy()
+            # Mapeamos la nueva columna con el truco anti-caché
+            df_vista = df_riders[["Foto_Con_Version", "Codigo_Texto", "nombre", "Bandera_URL", "Estado_Limpio", "categoria_base", "instagram", "total_eventos"]].copy()
             df_vista.columns = ["Foto", "Código", "Nombre", "País", "Estado", "Categoría", "Instagram", "Eventos"]
             
             st.dataframe(
@@ -775,7 +797,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
             )
         else:
             st.info("La base de datos de corredores del Maestro se encuentra vacía.")
-            
+                    
 # MODULO: INSCRIPCIÓN DE VÁLIDA
 # ==========================================
 elif "📝 Inscripción de Válida" in opcion_menu:
