@@ -383,10 +383,11 @@ crono_componente_dsa = registrar_componente_crono()
 def obtener_riders_desde_db():
     if not supabase: return []
     try:
-        response = supabase.table("riders_master").select("id_rider, nombre, categoria_base, foto_url").order("nombre").execute()
+        # El "*" le ordena a Supabase traer absolutamente todas las columnas existentes
+        response = supabase.table("riders_master").select("*").order("nombre").execute()
         return response.data
     except Exception as e:
-        st.error(f"Error: {e}")
+        st.error(f"Error al consultar la base de datos: {e}")
         return []
 
 def obtener_inscritos_desde_db():
