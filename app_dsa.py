@@ -470,20 +470,19 @@ def resolver_ruta_imagen(ruta_raw):
     # Si no encontró nada, devolvemos None
     return None
 # ==========================================
-# MODULO: MAESTRO DE CORREDORES (VERSIÓN FOTOS HD REAL-TIME)
+# MODULO: MAESTRO DE CORREDORES (VERSIÓN DEFINITIVA DE FOTOS)
 # ==========================================
 if "👥 Maestro de Corredores" in opcion_menu:
     import datetime
     import time
 
-    # Inicialización de interruptores de pantalla y VERSIÓN DE CACHÉ
+    # 1. Inicialización de interruptores de pantalla en la memoria de la App
     if "mostrar_registro_rider" not in st.session_state:
         st.session_state.mostrar_registro_rider = False
     if "mostrar_perfil_rider" not in st.session_state:
         st.session_state.mostrar_perfil_rider = False
     if "rider_autenticado" not in st.session_state:
         st.session_state.rider_autenticado = None
-    # 🚀 TRUCO MAESTRO: Control de caché para actualización instantánea de fotos
     if "version_fotos" not in st.session_state:
         st.session_state.version_fotos = 1
 
@@ -544,10 +543,11 @@ if "👥 Maestro de Corredores" in opcion_menu:
                         
                     if foto_archivo:
                         try:
+                            # Posicionamiento estándar de parámetros del SDK
                             supabase.storage.from_("riders-photos").upload(
-                                file=foto_archivo.getvalue(), 
                                 path=f"{id_formateado}.jpeg", 
-                                file_options={"content-type": foto_archivo.type, "x-upsert": "true"}
+                                file=foto_archivo.getvalue(), 
+                                file_options={"content-type": foto_archivo.type, "upsert": "true"}
                             )
                         except Exception as e:
                             st.warning(f"Aviso de almacenamiento de imagen: {e}")
@@ -685,16 +685,23 @@ if "👥 Maestro de Corredores" in opcion_menu:
 
                         id_rider_actual = rider.get('id_rider')
                         
-                        # 🚀 MEJORA SUBIDA: Eliminamos el silencio y forzamos x-upsert explícito
+                        # 🚀 BLINDAJE ABSOLUTO EN EL STORAGE DE SUPABASE 🚀
                         if nueva_foto:
                             try:
+                                # Paso A: Forzamos el borrado físico de la foto vieja de forma explícita
+                                try:
+                                    supabase.storage.from_("riders-photos").remove([f"{id_rider_actual}.jpeg"])
+                                except:
+                                    pass
+                                
+                                # Paso B: Subimos la nueva foto ordenando la sintaxis estricta y corrigiendo 'upsert'
                                 supabase.storage.from_("riders-photos").upload(
-                                    file=nueva_foto.getvalue(), 
                                     path=f"{id_rider_actual}.jpeg", 
-                                    file_options={"content-type": nueva_foto.type, "x-upsert": "true"}
+                                    file=nueva_foto.getvalue(), 
+                                    file_options={"content-type": nueva_foto.type, "upsert": "true"}
                                 )
                             except Exception as img_err:
-                                st.error(f"⚠️ Error de Supabase al sobrescribir la foto: {img_err}")
+                                st.error(f"⚠️ Alerta en Servidor de Imagen: {img_err}")
 
                         datos_actualizados = {
                             "nombre": edit_nombre,
@@ -711,7 +718,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
                         try:
                             supabase.table("riders_master").update(datos_actualizados).eq("id_rider", id_rider_actual).execute()
                             
-                            # 🚀 ACCIÓN REFRESH: Cambiamos el token de versión para romper la caché del navegador
+                            # Incrementamos el token anti-caché del navegador
                             st.session_state.version_fotos += 1
                             
                             st.success("🎉 ¡Tu perfil ha sido actualizado con éxito!")
@@ -772,7 +779,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
 
             df_riders["Codigo_Texto"] = df_riders["id_rider"].apply(mapear_codigo_texto)
 
-            # 🚀 SOLUCIÓN CACHÉ: Inyectamos el número de versión dinámico a la URL de la imagen
+            # Inyectamos el número de versión dinámico a la URL de la imagen para romper la caché
             v_actual = st.session_state.version_fotos
             df_riders["Foto_Con_Version"] = df_riders["foto_url"].apply(lambda url: f"{url}?v={v_actual}" if url else url)
 
@@ -781,7 +788,6 @@ if "👥 Maestro de Corredores" in opcion_menu:
             df_riders['categoria_cat'] = pd.Categorical(df_riders['categoria_base'], categories=orden_categorias, ordered=True)
             df_riders = df_riders.sort_values(['categoria_cat', 'nombre'])
             
-            # Mapeamos la nueva columna con el truco anti-caché
             df_vista = df_riders[["Foto_Con_Version", "Codigo_Texto", "nombre", "Bandera_URL", "Estado_Limpio", "categoria_base", "instagram", "total_eventos"]].copy()
             df_vista.columns = ["Foto", "Código", "Nombre", "País", "Estado", "Categoría", "Instagram", "Eventos"]
             
@@ -797,7 +803,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
             )
         else:
             st.info("La base de datos de corredores del Maestro se encuentra vacía.")
-                    
+                            
 # MODULO: INSCRIPCIÓN DE VÁLIDA
 # ==========================================
 elif "📝 Inscripción de Válida" in opcion_menu:
