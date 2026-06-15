@@ -177,7 +177,8 @@ st.markdown("""
 if "admin_auth" not in st.session_state:
     st.session_state.admin_auth = False
 
-modulos_publicos = ["🗂️ Historial de Válidas", "🌍 Ranking Nacional"]
+# Lista de módulos que NO requieren contraseña para ser vistos
+modulos_publicos = ["📂 Historial de Válidas", "🌎 Ranking Nacional", "👥 Maestro de Corredores"]
 
 # Si elige un módulo restringido y no está logueado, lo bloqueamos
 if opcion_menu not in modulos_publicos and not st.session_state.admin_auth:
