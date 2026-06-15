@@ -579,7 +579,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
                         st.error(f"Error al guardar: {e}")
 
     # =======================================================
-    # PANTALLA B: TABLA PRINCIPAL CON ICONOS REDUCIDOS
+    # PANTALLA B: TABLA PRINCIPAL CON ICONOS HD COMPACTOS
     # =======================================================
     else:
         col_t, col_b = st.columns([3, 1])
@@ -592,7 +592,6 @@ if "👥 Maestro de Corredores" in opcion_menu:
                 st.session_state.mostrar_registro_rider = True
                 st.rerun()
 
-        # Extraer la tabla
         riders_lista = obtener_riders_desde_db()
         if riders_lista:
             df_riders = pd.DataFrame(riders_lista)
@@ -605,14 +604,15 @@ if "👥 Maestro de Corredores" in opcion_menu:
 
             df_riders["total_eventos"] = pd.to_numeric(df_riders["total_eventos"], errors='coerce').fillna(0)
             
-            # --- FUNCIÓN CORREGIDA (Sin advertencias del linter) ---
+            # --- FUNCIÓN CORREGIDA CON RESOLUCIÓN EN HD (w80) ---
             def obtener_url_bandera(texto):
                 text_str = str(texto or '').strip()
                 if not text_str:
-                    return "https://flagcdn.com/w40/un.png"
+                    return "https://flagcdn.com/w80/un.png" # HD por defecto
                 
                 pais_codigo = text_str.split("|")[0].strip().lower()
-                return f"https://flagcdn.com/w40/{pais_codigo}.png"
+                # 🚀 SOLUCIÓN: Cambiamos w20 por w80 para traer el archivo en alta definición
+                return f"https://flagcdn.com/w80/{pais_codigo}.png"
 
             def obtener_estado_puro(texto):
                 if not texto: return "N/A"
@@ -644,6 +644,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
                 df_vista.set_index("Código"),
                 column_config={
                     "Foto": st.column_config.ImageColumn("Avatar", width="small"),
+                    # Dejamos width="small" para que la celda sea compacta, pero la imagen interna será nítida
                     "País": st.column_config.ImageColumn("País", width="small", help="Bandera de origen"),
                     "Instagram": st.column_config.LinkColumn("Instagram", display_text="📸 Ver Perfil"),
                     "Eventos": st.column_config.NumberColumn("Eventos", format="%d")
