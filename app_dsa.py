@@ -609,10 +609,10 @@ if "👥 Maestro de Corredores" in opcion_menu:
             def obtener_url_bandera(texto):
                 text_str = str(texto or '').strip()
                 if not text_str:
-                    return "https://flagcdn.com/w20/un.png"
+                    return "https://flagcdn.com/w40/un.png"
                 
                 pais_codigo = text_str.split("|")[0].strip().lower()
-                return f"https://flagcdn.com/w20/{pais_codigo}.png"
+                return f"https://flagcdn.com/w40/{pais_codigo}.png"
 
             def obtener_estado_puro(texto):
                 if not texto: return "N/A"
@@ -652,7 +652,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
             )
         else:
             st.info("La base de datos de corredores del Maestro se encuentra vacía.")
-            
+
 # MODULO: INSCRIPCIÓN DE VÁLIDA
 # ==========================================
 elif "📝 Inscripción de Válida" in opcion_menu:
@@ -1381,7 +1381,7 @@ elif "🗂️ Historial de Válidas" in opcion_menu:
                         with col_datos:
                             st.subheader(nombre)
                             st.caption(f"⭐ {titulo}")
-                            flag_url = f"https://flagcdn.com/w20/{pais_code}.png"
+                            flag_url = f"https://flagcdn.com/w40/{pais_code}.png"
                             st.markdown(f'<img src="{flag_url}" width="20"> &nbsp; **{ciudad}** &nbsp; | &nbsp; 📍 {ubicacion}', unsafe_allow_html=True)
                             st.write(f"📅 {fecha}")
                             st.markdown(f"📏 {distancia} | 👥 {participantes} Riders | 🎟️ {costo}")
