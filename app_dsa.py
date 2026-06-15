@@ -462,22 +462,44 @@ def resolver_ruta_imagen(ruta_raw):
     # Si no encontró nada, devolvemos None
     return None
 # ==========================================
-# MODULO: MAESTRO DE CORREDORES (TEXTO PURO RIDXXX)
+# MODULO: MAESTRO DE CORREDORES + AUTENTICACIÓN PRO
 # ==========================================
 if "👥 Maestro de Corredores" in opcion_menu:
-    import datetime  
-    
-    # Interruptor de pantalla para alternar entre Tabla y Registro público
+    import datetime
+
+    # --- INYECCIÓN DE CSS INVISIBLE PARA RESALTAR EL MENÚ LATERAL ---
+    st.markdown("""
+        <style>
+        /* Selecciona el botón nativo del menú lateral de Streamlit y lo hace resaltar */
+        button[data-testid="stSidebarCollapseButton"] {
+            background-color: #ff4b4b !important;
+            color: white !important;
+            border-radius: 50% !important;
+            box-shadow: 0 0 0 0 rgba(255, 75, 75, 0.7);
+            animation: pulso_menu 1.8s infinite cubic-bezier(0.66, 0, 0, 1);
+        }
+        @keyframes pulso_menu {
+            to {
+                box-shadow: 0 0 0 15px rgba(255, 75, 75, 0);
+            }
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # 1. Inicialización de interruptores de pantalla en la memoria de la App
     if "mostrar_registro_rider" not in st.session_state:
         st.session_state.mostrar_registro_rider = False
+    if "mostrar_perfil_rider" not in st.session_state:
+        st.session_state.mostrar_perfil_rider = False
+    if "rider_autenticado" not in st.session_state:
+        st.session_state.rider_autenticado = None
 
     # =======================================================
-    # PANTALLA A: FORMULARIO DE INSCRIPCIÓN (GUARDA TEXTO RIDXXX)
+    # PANTALLA A: FORMULARIO DE REGISTRO (CON NUEVA CONTRASEÑA)
     # =======================================================
     if st.session_state.mostrar_registro_rider:
         st.markdown("### 📝 Inscripción Oficial de Corredor")
-        
-        if st.button("⬅️ Cancelar y volver al Maestro"):
+        if st.button("⬅️ Cancelar y volver al Maestro", key="btn_cancel_reg"):
             st.session_state.mostrar_registro_rider = False
             st.rerun()
             
@@ -487,10 +509,8 @@ if "👥 Maestro de Corredores" in opcion_menu:
                 ids_actuales = []
                 for r in res.data:
                     val = str(r.get('id_rider', ''))
-                    # Filtramos solo los números del string para calcular el consecutivo real
                     digitos = ''.join(c for c in val if c.isdigit())
-                    if digitos:
-                        ids_actuales.append(int(digitos))
+                    if digitos: ids_actuales.append(int(digitos))
                 return max(ids_actuales) + 1 if ids_actuales else 1
             except:
                 return 1
@@ -501,67 +521,50 @@ if "👥 Maestro de Corredores" in opcion_menu:
 
         with st.form("form_nuevo_rider"):
             st.markdown(f"### 🆔 Código DSA Asignado: `{id_formateado}`")
-            st.caption(f"Tu foto de perfil en el servidor quedará vinculada automáticamente como: `{id_formateado}.jpeg`")
             
             col1, col2 = st.columns(2)
             with col1:
-                nombre = st.text_input("Nombre Completo *", placeholder="Ej: DIEGO PONCELET")
-                categoria_base = st.selectbox("Categoría Principal *", 
-                                              ["Open Skate", "Femenino Skate", "Junior Skate", "Master Skate", 
-                                               "Open Inline", "Femenino Inline", "Junior Inline", "Streetluge"])
-                
-                pais_input = st.text_input("Código de tu País (2 letras - Ej: VE, PA, CO, ES) *", max_chars=2, placeholder="VE").strip().upper()
-                ciudad_input = st.text_input("Ciudad o Estado que representas *", placeholder="Ej: BARCELONA o CARACAS")
-                
-                fecha_nacimiento = st.date_input(
-                    "Fecha de Nacimiento",
-                    value=datetime.date(2000, 1, 1),  
-                    min_value=datetime.date(1926, 1, 1),  
-                    max_value=datetime.date.today()  
-                )
+                nombre = st.text_input("Nombre Completo *").strip().upper()
+                categoria_base = st.selectbox("Categoría Principal *", ["Open Skate", "Femenino Skate", "Junior Skate", "Master Skate", "Open Inline", "Femenino Inline", "Junior Inline", "Streetluge"])
+                pais_input = st.text_input("Código de tu País (2 letras - Ej: VE, CO, PA) *", max_chars=2).strip().upper()
+                ciudad_input = st.text_input("Ciudad o Estado que representas *").strip().upper()
+                fecha_nacimiento = st.date_input("Fecha de Nacimiento", value=datetime.date(2000, 1, 1), min_value=datetime.date(1926, 1, 1))
                 
             with col2:
-                correo = st.text_input("Correo Electrónico *")
-                telefono = st.text_input("Teléfono de Contacto", placeholder="+58...")
-                telefono_emergencia = st.text_input("Teléfono de Emergencia")
-                instagram = st.text_input("Usuario de Instagram", placeholder="Ej: tu_usuario (sin el @)")
+                correo = st.text_input("Correo Electrónico *").strip()
+                # 🔐 NUEVO CAMPO: Contraseña para el usuario
+                password_input = st.text_input("Crea una Contraseña para tu Perfil *", type="password").strip()
+                telefono = st.text_input("Teléfono de Contacto").strip()
+                telefono_emergencia = st.text_input("Teléfono de Emergencia").strip()
+                instagram = st.text_input("Usuario de Instagram (sin @)").strip()
                 
             st.markdown("---")
-            st.write("📸 **Foto de Perfil Oficial**")
-            foto_archivo = st.file_uploader("Sube tu foto en formato cuadrado (JPG / PNG)", type=['jpg', 'jpeg', 'png'])
+            foto_archivo = st.file_uploader("Sube tu foto de perfil (JPG / PNG)", type=['jpg', 'jpeg', 'png'])
 
-            submit = st.form_submit_button("🚀 Registrar mi perfil en la DSA")
-
-            if submit:
-                if not nombre.strip() or not correo.strip() or not ciudad_input.strip() or len(pais_input) < 2:
-                    st.error("⚠️ Los campos marcados con (*) son obligatorios y el país requiere sus 2 letras.")
+            if st.form_submit_button("🚀 Registrar mi perfil en la DSA"):
+                if not nombre or not correo or not ciudad_input or len(pais_input) < 2 or not password_input:
+                    st.error("⚠️ Por favor completa los campos obligatorios (*) incluyendo tu contraseña.")
                 else:
-                    estado_pais_combinado = f"{pais_input} | {ciudad_input.strip().upper()}"
-                    
-                    insta_limpio = instagram.strip().replace("@", "")
+                    estado_pais_combinado = f"{pais_input} | {ciudad_input}"
+                    insta_limpio = instagram.replace("@", "")
                     if insta_limpio and not insta_limpio.startswith("http"):
                         insta_limpio = f"https://www.instagram.com/{insta_limpio}/"
                         
                     if foto_archivo:
                         try:
-                            supabase.storage.from_("riders-photos").upload(
-                                file=foto_archivo.getvalue(),
-                                path=f"{id_formateado}.jpeg",
-                                file_options={"content-type": foto_archivo.type, "x-upsert": "true"}
-                            )
-                        except Exception as e:
-                            st.warning(f"Aviso de imagen: {e}")
+                            supabase.storage.from_("riders-photos").upload(file=foto_archivo.getvalue(), path=f"{id_formateado}.jpeg", file_options={"content-type": foto_archivo.type, "x-upsert": "true"})
+                        except Exception as e: pass
 
-                    # 🚀 AQUÍ SE GUARDARÁ EL TEXTO "RID039" IMPECABLE Y PERFECTAMENTE ALINEADO
                     nuevo_registro = {
                         "id_rider": id_formateado,  
-                        "nombre": nombre.strip().upper(),
+                        "nombre": nombre,
                         "categoria_base": categoria_base,
                         "estado_pais": estado_pais_combinado,
                         "fecha_nacimiento": str(fecha_nacimiento),
-                        "correo": correo.strip(),
-                        "telefono": telefono.strip(),
-                        "telefono_emergencia": telefono_emergencia.strip(),
+                        "correo": correo,
+                        "password": password_input, # Guardamos la clave en formato texto libre
+                        "telefono": telefono,
+                        "telefono_emergencia": telefono_emergencia,
                         "instagram": insta_limpio if insta_limpio else None,
                         "foto_url": url_foto_generada,
                         "total_eventos": 0
@@ -569,32 +572,157 @@ if "👥 Maestro de Corredores" in opcion_menu:
                     
                     try:
                         supabase.table("riders_master").insert(nuevo_registro).execute()
-                        st.success(f"🎉 ¡Inscripción procesada! Registrado exitosamente bajo el código: {id_formateado}.")
+                        st.success(f"🎉 ¡Inscripción exitosa! Tu código es {id_formateado}.")
                         time.sleep(2)
                         st.session_state.mostrar_registro_rider = False
                         st.rerun()
                     except Exception as e:
-                        st.error(f"Error al guardar en Supabase: {e}")
+                        st.error(f"Error: {e}")
 
     # =======================================================
-    # PANTALLA B: TABLA PRINCIPAL CON FORMATO DE TEXTO PROTEGIDO
+    # PANTALLA C: INTERFAZ AUTÓNOMA "MI PERFIL DSA" (LOGIN / EDICIÓN)
+    # =======================================================
+    elif st.session_state.mostrar_perfil_rider:
+        st.markdown("### 👤 Panel Autónomo de Corredores")
+        
+        if st.button("⬅️ Volver a la Tabla Principal", key="btn_volver_tabla"):
+            st.session_state.mostrar_perfil_rider = False
+            st.rerun()
+
+        # CASO C1: EL USUARIO NO SE HA LOGUEADO (MOSTRAR LOGIN)
+        if st.session_state.rider_autenticado is None:
+            st.markdown("#### 🔑 Iniciar Sesión de Atleta")
+            col_l1, col_l2 = st.columns(2)
+            with col_l1:
+                login_codigo = st.text_input("Ingresa tu Código DSA:", placeholder="Ej: RID039").strip().upper()
+                login_pass = st.text_input("Ingresa tu Contraseña:", type="password").strip()
+                
+                if st.button("🔓 Entrar a mi Perfil", use_container_width=True):
+                    if not login_codigo or not login_pass:
+                        st.error("⚠️ Completa ambos campos.")
+                    else:
+                        try:
+                            # Buscamos al corredor por su código exacto
+                            res = supabase.table("riders_master").select("*").eq("id_rider", login_codigo).execute()
+                            if res.data:
+                                rider_db = res.data[0]
+                                # Verificamos contraseña de forma segura
+                                if str(rider_db.get('password', '')).strip() == login_pass:
+                                    st.session_state.rider_autenticado = rider_db
+                                    st.success(f"✅ ¡Bienvenido de nuevo, {rider_db.get('nombre')}!")
+                                    time.sleep(1.5)
+                                    st.rerun()
+                                else:
+                                    st.error("❌ Contraseña incorrecta para este código.")
+                            else:
+                                st.error("❌ El código ingresado no existe en el sistema.")
+                        except Exception as e:
+                            st.error(f"Error de conexión: {e}")
+
+        # CASO C2: USUARIO EN LÍNEA (MOSTRAR PANEL DE EDICIÓN DE DATOS)
+        else:
+            rider = st.session_state.rider_autenticado
+            st.markdown(f"#### 🛠️ Editando el Perfil de: **{rider.get('id_rider')}**")
+            
+            # Botón de desconexión rápida
+            if st.button("🚨 Cerrar Sesión de Corredor"):
+                st.session_state.rider_autenticado = None
+                st.rerun()
+
+            # Desglosamos la ubicación actual para precargarla de manera limpia en los selectores
+            ubicacion_actual = str(rider.get('estado_pais', 'VE | CARACAS'))
+            p_inicial = ubicacion_actual.split("|")[0].strip() if "|" in ubicacion_actual else "VE"
+            e_inicial = ubicacion_actual.split("|")[1].strip() if "|" in ubicacion_actual else ubicacion_actual
+
+            # Desglosamos la fecha guardada
+            try: f_inicial = datetime.datetime.strptime(rider.get('fecha_nacimiento', '2000-01-01'), '%Y-%m-%d').date()
+            except: f_inicial = datetime.date(2000, 1, 1)
+
+            with st.form("form_editar_rider"):
+                col_e1, col_e2 = st.columns(2)
+                with col_e1:
+                    edit_nombre = st.text_input("Nombre Completo *", value=rider.get('nombre', '')).strip().upper()
+                    edit_categoria = st.selectbox("Categoría de Competición *", 
+                                                  ["Open Skate", "Femenino Skate", "Junior Skate", "Master Skate", "Open Inline", "Femenino Inline", "Junior Inline", "Streetluge"],
+                                                  index=["Open Skate", "Femenino Skate", "Junior Skate", "Master Skate", "Open Inline", "Femenino Inline", "Junior Inline", "Streetluge"].index(rider.get('categoria_base', 'Open Skate')))
+                    edit_pais = st.text_input("Código de tu País (2 letras) *", value=p_inicial, max_chars=2).strip().upper()
+                    edit_ciudad = st.text_input("Ciudad / Estado *", value=e_inicial).strip().upper()
+                    edit_fecha = st.date_input("Fecha de Nacimiento", value=f_inicial, min_value=datetime.date(1926, 1, 1))
+                
+                with col2:
+                    edit_correo = st.text_input("Correo Electrónico *", value=rider.get('correo', '')).strip()
+                    edit_pass = st.text_input("Cambiar Contraseña *", value=rider.get('password', ''), type="password").strip()
+                    edit_tel = st.text_input("Teléfono de Contacto", value=rider.get('telefono', '')).strip()
+                    edit_tel_em = st.text_input("Teléfono de Emergencia", value=rider.get('telefono_emergencia', '')).strip()
+                    
+                    insta_url_vieja = str(rider.get('instagram', ''))
+                    insta_user_viejo = insta_url_vieja.split("/")[-2] if "instagram.com" in insta_url_vieja else insta_url_vieja
+                    edit_insta = st.text_input("Usuario de Instagram (sin @)", value=insta_user_viejo).strip()
+
+                st.markdown("---")
+                st.write("📸 **Actualizar Foto de Perfil** (Dejar vacío si deseas conservar tu foto actual)")
+                nueva_foto = st.file_uploader("Subir nueva imagen cuadrada (JPG / PNG)", type=['jpg', 'jpeg', 'png'], key="update_photo_loader")
+
+                if st.form_submit_button("💾 Guardar y Actualizar mis Datos"):
+                    if not edit_nombre or not edit_correo or not edit_ciudad or len(edit_pais) < 2 or not edit_pass:
+                        st.error("⚠️ Los campos marcados con (*) son obligatorios.")
+                    else:
+                        edit_insta_limpio = edit_insta.replace("@", "")
+                        if edit_insta_limpio and not edit_insta_limpio.startswith("http"):
+                            edit_insta_limpio = f"https://www.instagram.com/{edit_insta_limpio}/"
+
+                        # Si subió una nueva foto, reemplazamos el archivo existente en el bucket
+                        if nueva_foto:
+                            try:
+                                supabase.storage.from_("riders-photos").upload(file=nueva_foto.getvalue(), path=f"{rider.get('id_rider')}.jpeg", file_options={"content-type": nueva_foto.type, "x-upsert": "true"})
+                            except: pass
+
+                        datos_actualizados = {
+                            "nombre": edit_nombre,
+                            "categoria_base": edit_categoria,
+                            "estado_pais": f"{edit_pais} | {edit_ciudad}",
+                            "fecha_nacimiento": str(edit_fecha),
+                            "correo": edit_correo,
+                            "password": edit_pass,
+                            "telefono": edit_tel,
+                            "telefono_emergencia": edit_tel_em,
+                            "instagram": edit_insta_limpio if edit_insta_limpio else None
+                        }
+
+                        try:
+                            supabase.table("riders_master").update(datos_actualizados).eq("id_rider", rider.get('id_rider')).execute()
+                            st.success("🎉 ¡Tu perfil ha sido actualizado con éxito!")
+                            # Actualizamos los datos en caché de sesión para ver los cambios reflejados
+                            st.session_state.rider_autenticado.update(datos_actualizados)
+                            time.sleep(1.5)
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Error al sincronizar los cambios: {e}")
+
+    # =======================================================
+    # PANTALLA B: TABLA PRINCIPAL DE CONSULTA (VISTA POR DEFECTO)
     # =======================================================
     else:
-        col_t, col_b = st.columns([3, 1])
+        col_t, col_b1, col_b2 = st.columns([2, 1, 1])
         with col_t:
             st.subheader("👥 Maestro Global de Corredores")
             st.write("Historial y base de datos de atletas registrados oficialmente en el sistema.")
-        with col_b:
+        with col_b1:
             st.write("<br>", unsafe_allow_html=True)
-            if st.button("➕ REGÍSTRATE AQUÍ RIDER", use_container_width=True):
+            if st.button("➕ REGÍSTRATE CORREDOR", use_container_width=True):
                 st.session_state.mostrar_registro_rider = True
+                st.rerun()
+        with col_b2:
+            st.write("<br>", unsafe_allow_html=True)
+            # 🚀 NUEVO BOTÓN INTEGRADO AL LADO DEL REGISTRO
+            if st.button("👤 Mi Perfil DSA", use_container_width=True):
+                st.session_state.mostrar_perfil_rider = True
                 st.rerun()
 
         riders_lista = obtener_riders_desde_db()
         if riders_lista:
             df_riders = pd.DataFrame(riders_lista)
             
-            # --- BLINDAJE ---
             cols_necesarias = ["foto_url", "id_rider", "nombre", "estado_pais", "categoria_base", "instagram", "total_eventos"]
             for col in cols_necesarias:
                 if col not in df_riders.columns:
@@ -604,8 +732,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
             
             def obtener_url_bandera(texto):
                 text_str = str(texto or '').strip()
-                if not text_str:
-                    return "https://flagcdn.com/w80/un.png"
+                if not text_str: return "https://flagcdn.com/w80/un.png"
                 pais_codigo = text_str.split("|")[0].strip().lower()
                 return f"https://flagcdn.com/w80/{pais_codigo}.png"
 
@@ -616,25 +743,19 @@ if "👥 Maestro de Corredores" in opcion_menu:
             df_riders["Bandera_URL"] = df_riders["estado_pais"].apply(obtener_url_bandera)
             df_riders["Estado_Limpio"] = df_riders["estado_pais"].apply(obtener_estado_puro)
 
-            # --- PARSEO INTELIGENTE PARA LA TABLA ---
             def mapear_codigo_texto(val):
                 val_str = str(val).strip()
-                if val_str.startswith("RID"):
-                    return val_str  # Si ya es "RID039", lo deja pasar intacto
-                try:
-                    return f"RID{int(val_str):03d}"  # Si hay algún número viejo suelto (ej: 2), lo maquilla
-                except:
-                    return val_str
+                if val_str.startswith("RID"): return val_str  
+                try: return f"RID{int(val_str):03d}"  
+                except: return val_str
 
             df_riders["Codigo_Texto"] = df_riders["id_rider"].apply(mapear_codigo_texto)
 
-            # --- ORDENACIÓN ---
             orden_categorias = ["Open Skate", "Femenino Skate", "Junior Skate", "Master Skate", "Open Inline", "Femenino Inline", "Junior Inline"]
             df_riders['categoria_base'] = df_riders['categoria_base'].fillna("Sin Categoría")
             df_riders['categoria_cat'] = pd.Categorical(df_riders['categoria_base'], categories=orden_categorias, ordered=True)
             df_riders = df_riders.sort_values(['categoria_cat', 'nombre'])
             
-            # --- SELECCIÓN DE VISTA ---
             df_vista = df_riders[["foto_url", "Codigo_Texto", "nombre", "Bandera_URL", "Estado_Limpio", "categoria_base", "instagram", "total_eventos"]].copy()
             df_vista.columns = ["Foto", "Código", "Nombre", "País", "Estado", "Categoría", "Instagram", "Eventos"]
             
@@ -650,7 +771,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
             )
         else:
             st.info("La base de datos de corredores del Maestro se encuentra vacía.")
-
+            
 # MODULO: INSCRIPCIÓN DE VÁLIDA
 # ==========================================
 elif "📝 Inscripción de Válida" in opcion_menu:
