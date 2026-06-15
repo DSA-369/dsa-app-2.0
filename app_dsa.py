@@ -132,17 +132,12 @@ else:
 # 3. CARGA DE LOGO REAL DE LA DSA
 # ==========================================
 # Traer el logo directamente desde Supabase
-# Traer el logo directamente desde Supabase
 LOGO_URL = "https://gaxnteisqvvkjavhtmgm.supabase.co/storage/v1/object/public/directorio-partners/SPOND36.PNG"
-
-# 1. Mostrar la imagen del logo
 st.sidebar.image(LOGO_URL, use_container_width=True)
 
-# 2. Mostrar el subtítulo centrado debajo de la imagen
-st.sidebar.markdown("<h3 style='color:#ff7a00; text-align:center; margin-top: -10px;'>🏁 DSA 2.0</h3>", unsafe_allow_html=True)
+# La línea divisoria debajo del logo
+st.sidebar.markdown("<hr style='border: 1px solid #1e293b;'/>", unsafe_allow_html=True)
 
-# 3. La línea divisoria
-st.sidebar.markdown("<hr style='border: 1px solid #1e293b; margin-top: 5px;'/>", unsafe_allow_html=True)
 # ==========================================
 # 4. NAVEGACIÓN MODULAR (RANKING EN SEGUNDO LUGAR)
 # ==========================================
@@ -175,7 +170,7 @@ st.markdown("""
 if "admin_auth" not in st.session_state:
     st.session_state.admin_auth = False
 
-modulos_publicos = ["🗂️ Historial de Válidas", "🌍 Ranking Nacional"]
+modulos_publicos = ["🗂️ Historial de Válidas", "🌍 Ranking Nacional", "👥 Maestro de Corredores"]
 
 # Si elige un módulo restringido y no está logueado, lo bloqueamos
 if opcion_menu not in modulos_publicos and not st.session_state.admin_auth:
@@ -377,7 +372,8 @@ crono_componente_dsa = registrar_componente_crono()
 def obtener_riders_desde_db():
     if not supabase: return []
     try:
-        response = supabase.table("riders_master").select("id_rider, nombre, categoria_base, foto_url").order("nombre").execute()
+        # CORREGIDO: Usamos "*" para traer todas las columnas (estado_pais, total_eventos, etc.)
+        response = supabase.table("riders_master").select("*").order("nombre").execute()
         return response.data
     except Exception as e:
         st.error(f"Error: {e}")
@@ -458,20 +454,164 @@ def resolver_ruta_imagen(ruta_raw):
 # MODULO: MAESTRO DE CORREDORES
 # ==========================================
 if "👥 Maestro de Corredores" in opcion_menu:
-    st.subheader("👥 Maestro Global de Corredores")
-    st.write("Visualización y gestión de la base de datos histórica de atletas registrados.")
     
-    riders_lista = obtener_riders_desde_db()
-    if riders_lista:
-        df_riders = pd.DataFrame(riders_lista)
-        df_riders_vista = df_riders.drop(columns=["foto_url"], errors="ignore")
-        df_riders_vista.columns = ["Código", "Nombre", "Categoría Base"]
-        st.dataframe(df_riders_vista.set_index("Código"), use_container_width=True)
-    else:
-        st.info("La base de datos de corredores del Maestro se encuentra vacía.")
+    # 1. Crear el interruptor de pantalla si no existe
+    if "mostrar_registro_rider" not in st.session_state:
+        st.session_state.mostrar_registro_rider = False
 
+    # =======================================================
+    # PANTALLA A: FORMULARIO DE INSCRIPCIÓN (Oculto por defecto)
+    # =======================================================
+    if st.session_state.mostrar_registro_rider:
+        st.markdown("### 📝 Inscripción Oficial de Corredor")
+        
+        # Botón para cancelar/volver
+        if st.button("⬅️ Cancelar y volver al Maestro"):
+            st.session_state.mostrar_registro_rider = False
+            st.rerun()
+            
+        # Lógica para calcular el próximo ID automáticamente
+        def obtener_proximo_id():
+            try:
+                res = supabase.table("riders_master").select("id_rider").execute()
+                ids_actuales = [int(r['id_rider']) for r in res.data if str(r['id_rider']).isdigit()]
+                return max(ids_actuales) + 1 if ids_actuales else 1
+            except:
+                return 1
+                
+        proximo_id = obtener_proximo_id()
+        # Formateamos el ID para que siempre tenga 3 dígitos (Ej: 001, 012, 105)
+        id_formateado = f"RID{proximo_id:03d}"
+        url_foto_generada = f"https://gaxnteisqvvkjavhtmgm.supabase.co/storage/v1/object/public/riders-photos/{id_formateado}.jpeg"
+
+        with st.form("form_nuevo_rider"):
+            st.info(f"Tu Código de Corredor será: **{id_formateado}**")
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                nombre = st.text_input("Nombre Completo *")
+                categoria_base = st.selectbox("Categoría Principal *", 
+                                              ["Open Skate", "Femenino Skate", "Junior Skate", "Master Skate", 
+                                               "Open Inline", "Femenino Inline", "Junior Inline", "Streetluge"])
+                estado_pais = st.text_input("Estado / País *", placeholder="Ej: Caracas, Venezuela")
+                fecha_nacimiento = st.date_input("Fecha de Nacimiento")
+                
+            with col2:
+                correo = st.text_input("Correo Electrónico *")
+                telefono = st.text_input("Teléfono", placeholder="+58...")
+                telefono_emergencia = st.text_input("Teléfono de Emergencia")
+                instagram = st.text_input("Usuario de Instagram", placeholder="Ej: jjuandh (sin el @)")
+                
+            st.markdown("---")
+            st.write("📸 **Foto de Perfil**")
+            st.markdown(f"*El sistema le asignará automáticamente el nombre de tu código: `{id_formateado}.jpeg`*")
+            
+            # Subida directa de archivo a Supabase desde la App
+            foto_archivo = st.file_uploader("Sube tu foto aquí (JPG / PNG)", type=['jpg', 'jpeg', 'png'])
+
+            submit = st.form_submit_button("🚀 Registrar mi perfil en la DSA")
+
+            if submit:
+                if not nombre or not correo or not estado_pais:
+                    st.error("⚠️ Por favor completa los campos obligatorios (*).")
+                else:
+                    # 1. Automatizar enlace de Instagram
+                    insta_limpio = instagram.strip().replace("@", "")
+                    if insta_limpio and not insta_limpio.startswith("http"):
+                        insta_limpio = f"https://www.instagram.com/{insta_limpio}/"
+                        
+                    # 2. Subir Foto a Supabase Storage (Si el rider seleccionó una)
+                    if foto_archivo:
+                        try:
+                            supabase.storage.from_("riders-photos").upload(
+                                file=foto_archivo.getvalue(),
+                                path=f"{id_formateado}.jpeg",
+                                file_options={"content-type": foto_archivo.type, "x-upsert": "true"}
+                            )
+                        except Exception as e:
+                            st.warning(f"Aviso de imagen: {e}. (Podrás subirla manualmente después).")
+
+                    # 3. Guardar en Base de Datos
+                    nuevo_registro = {
+                        "id_rider": proximo_id,
+                        "nombre": nombre.strip().upper(),
+                        "categoria_base": categoria_base,
+                        "estado_pais": estado_pais,
+                        "fecha_nacimiento": str(fecha_nacimiento),
+                        "correo": correo,
+                        "telefono": telefono,
+                        "telefono_emergencia": telefono_emergencia,
+                        "instagram": insta_limpio,
+                        "foto_url": url_foto_generada, # Se graba el link automático siempre
+                        "total_eventos": 0
+                    }
+                    
+                    try:
+                        supabase.table("riders_master").insert(nuevo_registro).execute()
+                        st.success("🎉 ¡Inscripción Exitosa! Volviendo a la tabla...")
+                        time.sleep(2)
+                        st.session_state.mostrar_registro_rider = False # Cierra el form
+                        st.rerun() # Recarga la pantalla
+                    except Exception as e:
+                        st.error(f"Error en base de datos: {e}")
+
+    # =======================================================
+    # PANTALLA B: TABLA PRINCIPAL (Vista Pública / Admin)
+    # =======================================================
+    else:
+        # Columna 1 (Título) y Columna 2 (Botón Naranja)
+        col_t, col_b = st.columns([3, 1])
+        with col_t:
+            st.subheader("👥 Maestro Global de Corredores")
+            st.write("Visualización y gestión de la base de datos histórica de atletas registrados.")
+        with col_b:
+            st.write("") # Pequeño espacio para alinear el botón
+            if st.button("➕ Regístrate como corredor", use_container_width=True):
+                st.session_state.mostrar_registro_rider = True
+                st.rerun()
+
+        # Extraer la tabla
+        riders_lista = obtener_riders_desde_db()
+        if riders_lista:
+            df_riders = pd.DataFrame(riders_lista)
+            
+            # --- 1. ORDENAR LA TABLA POR CATEGORÍAS ---
+            orden_categorias = [
+                "Open Skate", "Femenino Skate", "Junior Skate", "Master Skate", 
+                "Open Inline", "Femenino Inline", "Junior Inline"
+            ]
+            # Convertimos la columna al tipo "Categórico" de Pandas para forzar nuestro orden
+            df_riders['categoria_base'] = pd.Categorical(df_riders['categoria_base'], categories=orden_categorias, ordered=True)
+            # Ordenamos primero por Categoría y luego alfabéticamente por Nombre
+            df_riders = df_riders.sort_values(['categoria_base', 'nombre'])
+            
+            # --- 2. ASEGURAR COLUMNAS ---
+            # Si "total_eventos" aún no existe en Supabase, lo creamos virtualmente para que no de error
+            if "total_eventos" not in df_riders.columns:
+                df_riders["total_eventos"] = 0
+                
+            # Seleccionamos y ordenamos las columnas para mostrarlas
+            df_vista = df_riders[["foto_url", "id_rider", "nombre", "estado_pais", "categoria_base", "total_eventos"]].copy()
+            df_vista.columns = ["Foto", "Código", "Nombre", "Estado / País", "Categoría", "Eventos"]
+            
+            # --- 3. DIBUJAR LA TABLA CON FOTOS REDONDAS ---
+            # st.column_config nos permite transformar URLs de texto en imágenes redondas/iconos
+            st.dataframe(
+                df_vista.set_index("Código"),
+                column_config={
+                    "Foto": st.column_config.ImageColumn(
+                        "Avatar", help="Foto oficial del corredor"
+                    ),
+                    "Eventos": st.column_config.NumberColumn(
+                        "Eventos", format="%d", help="Cantidad de válidas corridas"
+                    )
+                },
+                use_container_width=True
+            )
+        else:
+            st.info("La base de datos de corredores del Maestro se encuentra vacía.")
 # ==========================================
-# MODULO: INSCRIPCIÓN DE VÁLIDA
+# MODULO: INSCRIPCIÓN DE VÁLIDA (VERSIÓN BLINDADA)
 # ==========================================
 elif "📝 Inscripción de Válida" in opcion_menu:
     st.subheader("📝 Inscripción y Entrega de Dorsales")
@@ -480,135 +620,114 @@ elif "📝 Inscripción de Válida" in opcion_menu:
     riders_lista = obtener_riders_desde_db()
     inscritos_lista = obtener_inscritos_desde_db()
     
-    if not riders_lista:
-        st.warning("⚠️ No se encontraron corredores en la tabla 'riders_master'. Primero debes registrar atletas en la base de datos.")
-    else:
-        opciones_select = [f"{r['id_rider']} | {r['nombre']}" for r in riders_lista]
+    # Listas globales para reutilizar
+    LISTA_CATEGORIAS = ["Open Skate", "Junior Skate", "Femenino Skate", "Master Skate", 
+                        "Open Inline", "Junior Inline", "Femenino Inline", "Master Inline", "Open Streetluge"]
+    LISTA_ESTADOS = ["Inscrito", "Verificado", "Retirado"]
 
-        # Fila superior: Formulario y Planilla actual
+    if not riders_lista:
+        st.warning("⚠️ No se encontraron corredores en la tabla 'riders_master'.")
+    else:
+        opciones_select = [f"{r.get('id_rider', '0')} | {r.get('nombre', 'Desconocido')}" for r in riders_lista]
+
         col1, col2 = st.columns([4, 6])
 
+        # --- SECCIÓN: FORMULARIO ---
         with col1:
             st.markdown("### 🎫 Formulario de Registro")
             with st.form("registro_pista"):
                 rider_elegido = st.selectbox("Seleccionar Atleta:", opciones_select)
                 dorsal_input = st.text_input("🔢 Número de Dorsal asignado:", placeholder="Ej: 24").strip()
-                
-                categoria_carrera = st.selectbox(
-                    "⚡ Categoría de Competición:",
-                    ["Open Skate", "Junior Skate", "Femenino Skate", "Master Skate", "Open Inline", "Junior Inline", "Femenino Inline", "Master Inline", "Open Streetluge"]
-                )
-                
+                categoria_carrera = st.selectbox("⚡ Categoría de Competición:", LISTA_CATEGORIAS)
                 disclaimer = st.checkbox("✍️ Disclaimer Físico Firmado", value=False)
-                estado_reg = st.selectbox("🚦 Estatus Inicial:", ["Inscrito", "Verificado", "Retirado"])
+                estado_reg = st.selectbox("🚦 Estatus Inicial:", LISTA_ESTADOS)
 
                 guardar = st.form_submit_button("💾 Guardar en Base de Datos")
 
                 if guardar:
                     if not dorsal_input:
-                        st.error("❌ El número de dorsal es estrictamente obligatorio para pista.")
+                        st.error("❌ El dorsal es obligatorio.")
                     else:
                         id_rider_clean = rider_elegido.split(" | ")[0].strip()
-                        datos_inscripcion = {
-                            "dorsal": dorsal_input,
-                            "id_rider": id_rider_clean,
-                            "categoria_evento": categoria_carrera,
-                            "firma_disclaimer": disclaimer,
-                            "estado_registro": estado_reg
-                        }
-                        
                         try:
-                            supabase.table("inscritos_valida").insert(datos_inscripcion).execute()
-                            st.success(f"🎉 ¡Dorsal {dorsal_input} asignado con éxito!")
+                            supabase.table("inscritos_valida").insert({
+                                "dorsal": dorsal_input,
+                                "id_rider": id_rider_clean,
+                                "categoria_evento": categoria_carrera,
+                                "firma_disclaimer": disclaimer,
+                                "estado_registro": estado_reg
+                            }).execute()
+                            st.success(f"🎉 ¡Dorsal {dorsal_input} asignado!")
                             st.rerun()
                         except Exception as ex:
-                            err_msg = str(ex)
-                            if "already exists" in err_msg or "violates unique constraint" in err_msg:
-                                st.error(f"⚠️ Error: El Dorsal '{dorsal_input}' ya está asignado a otro corredor.")
-                            else:
-                                st.error(f"❌ Error al guardar: {err_msg}")
+                            st.error(f"❌ Error: {str(ex)}")
 
+        # --- SECCIÓN: TABLA ---
         with col2:
             st.markdown("### 📋 Planilla de Control de Pista")
             if not inscritos_lista:
-                st.info("ℹ️ No hay corredores registrados en pista para esta carrera aún.")
+                st.info("ℹ️ No hay corredores en pista.")
             else:
                 tabla_datos = []
                 for ins in inscritos_lista:
-                    nombre_rider = ins.get('riders_master', {}).get('nombre', 'Desconocido') if ins.get('riders_master') else 'Desconocido'
+                    # Acceso seguro a datos anidados
+                    rider_data = ins.get('riders_master', {})
+                    nombre_rider = rider_data.get('nombre', 'Desconocido') if isinstance(rider_data, dict) else 'Desconocido'
+                    
                     tabla_datos.append({
-                        "Dorsal": ins['dorsal'],
-                        "ID Rider": ins['id_rider'],
+                        "Dorsal": ins.get('dorsal', 'N/A'),
+                        "ID Rider": ins.get('id_rider', 'N/A'),
                         "Nombre": nombre_rider,
-                        "Categoría": ins['categoria_evento'],
-                        "Disclaimer": "✅ Firmado" if ins['firma_disclaimer'] else "⏳ Pendiente",
-                        "Estatus": ins['estado_registro']
+                        "Categoría": ins.get('categoria_evento', 'N/A'),
+                        "Disclaimer": "✅ Firmado" if ins.get('firma_disclaimer') else "⏳ Pendiente",
+                        "Estatus": ins.get('estado_registro', 'Inscrito')
                     })
                 
                 df_inscritos = pd.DataFrame(tabla_datos)
                 st.dataframe(df_inscritos.set_index("Dorsal"), use_container_width=True)
 
-        # Fila inferior: Modificación y Baja Operativa (Solo si hay inscritos)
+        # --- SECCIÓN: GESTIÓN (Solo si hay datos) ---
         if inscritos_lista:
             st.markdown("---")
-            st.markdown("### ⚙️ Panel de Modificación y Baja Operativa")
-            st.write("Selecciona un dorsal activo en la carrera para editar su información o darlo de baja.")
+            st.markdown("### ⚙️ Panel de Modificación y Baja")
             
-            dorsales_activos = [ins['dorsal'] for ins in inscritos_lista]
+            dorsales_activos = [ins.get('dorsal', 'N/A') for ins in inscritos_lista]
+            dorsal_a_gestionar = st.selectbox("🎯 Seleccionar Dorsal a Gestionar:", dorsales_activos)
             
-            col_sel, col_edit, col_del = st.columns([3, 5, 4])
-            
-            with col_sel:
-                dorsal_a_gestionar = st.selectbox("🎯 Seleccionar Dorsal a Gestionar:", dorsales_activos)
-                datos_actuales = next((ins for ins in inscritos_lista if ins['dorsal'] == dorsal_a_gestionar), None)
+            datos_actuales = next((ins for ins in inscritos_lista if ins.get('dorsal') == dorsal_a_gestionar), None)
             
             if datos_actuales:
-                nombre_actual = datos_actuales.get('riders_master', {}).get('nombre', 'Desconocido') if datos_actuales.get('riders_master') else 'Desconocido'
+                c1, c2, c3 = st.columns([3, 5, 4])
                 
-                with col_edit:
-                    st.markdown(f"**✏️ Editar Datos de: {nombre_actual} (Dorsal {dorsal_a_gestionar})**")
-                    nueva_categoria = st.selectbox(
-                        "Cambiar Categoría de Evento:",
-                        ["Open Skate", "Junior Skate", "Femenino Skate", "Master Skate", "Open Inline", "Junior Inline", "Femenino Inline", "Master Inline", "Open Streetluge"],
-                        index=["Open Skate", "Junior Skate", "Femenino Skate", "Master Skate", "Open Inline", "Junior Inline", "Femenino Inline", "Master Inline", "Open Streetluge"].index(datos_actuales['categoria_evento'])
-                    )
-                    nuevo_estatus = st.selectbox(
-                        "Cambiar Estatus de Registro:",
-                        ["Inscrito", "Verificado", "Retirado"],
-                        index=["Inscrito", "Verificado", "Retirado"].index(datos_actuales['estado_registro'])
-                    )
-                    nuevo_disclaimer = st.checkbox("Disclaimer Físico Actualizado", value=datos_actuales['firma_disclaimer'], key="edit_disc_valida")
+                # Función segura para encontrar el índice de selección
+                def get_idx(lista, valor):
+                    return lista.index(valor) if valor in lista else 0
+
+                with c2:
+                    st.markdown(f"**✏️ Editar Datos**")
+                    nueva_cat = st.selectbox("Categoría:", LISTA_CATEGORIAS, index=get_idx(LISTA_CATEGORIAS, datos_actuales.get('categoria_evento')))
+                    nuevo_est = st.selectbox("Estatus:", LISTA_ESTADOS, index=get_idx(LISTA_ESTADOS, datos_actuales.get('estado_registro')))
+                    nuevo_disc = st.checkbox("Disclaimer Firmado", value=datos_actuales.get('firma_disclaimer', False))
                     
-                    if st.button("🆙 Actualizar Datos del Rider"):
+                    if st.button("🆙 Actualizar Datos"):
                         try:
                             supabase.table("inscritos_valida").update({
-                                "categoria_evento": nueva_categoria,
-                                "estado_registro": nuevo_estatus,
-                                "firma_disclaimer": nuevo_disclaimer
+                                "categoria_evento": nueva_cat,
+                                "estado_registro": nuevo_est,
+                                "firma_disclaimer": nuevo_disc
                             }).eq("dorsal", dorsal_a_gestionar).execute()
-                            
-                            st.success(f"✅ Dorsal {dorsal_a_gestionar} updated successfully.")
                             st.rerun()
                         except Exception as e:
-                            st.error(f"Error al actualizar: {e}")
+                            st.error(f"Error: {e}")
                 
-                with col_del:
-                    st.markdown("**🚨 Zona de Peligro (Bajas)**")
-                    st.write("Si un atleta decide no participar, puedes removerlo permanentemente.")
-                    st.warning(f"Eliminará al Dorsal {dorsal_a_gestionar} de la carrera actual.")
-                    
-                    confirmar_borrado = st.checkbox(f"Confirmo la baja del Dorsal {dorsal_a_gestionar}", value=False)
-                    if st.button("🗑️ Eliminar Corredor de la Válida"):
-                        if confirmar_borrado:
-                            try:
-                                supabase.table("inscritos_valida").delete().eq("dorsal", dorsal_a_gestionar).execute()
-                                st.success(f"💥 El Dorsal {dorsal_a_gestionar} fue eliminado.")
-                                st.rerun()
-                            except Exception as e:
-                                st.error(f"Error al eliminar: {e}")
-                        else:
-                            st.error("⚠️ Debes confirmar la casilla de seguridad antes de eliminar.")
-
+                with c3:
+                    st.markdown("**🚨 Baja**")
+                    if st.button("🗑️ Eliminar Corredor"):
+                        try:
+                            supabase.table("inscritos_valida").delete().eq("dorsal", dorsal_a_gestionar).execute()
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Error: {e}")
 # ==========================================
 # MODULO: ⏱️ CRONOMETRAJE EN PISTA
 # ==========================================
