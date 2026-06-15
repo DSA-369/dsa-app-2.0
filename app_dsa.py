@@ -709,7 +709,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
             st.write("Historial y base de datos de atletas registrados oficialmente en el sistema.")
         with col_b1:
             st.write("<br>", unsafe_allow_html=True)
-            if st.button("➕ REGÍSTRATE CORREDOR", use_container_width=True):
+            if st.button("➕ REGÍSTRATE AQUÍ", use_container_width=True):
                 st.session_state.mostrar_registro_rider = True
                 st.rerun()
         with col_b2:
@@ -771,7 +771,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
             )
         else:
             st.info("La base de datos de corredores del Maestro se encuentra vacía.")
-            
+
 # MODULO: INSCRIPCIÓN DE VÁLIDA
 # ==========================================
 elif "📝 Inscripción de Válida" in opcion_menu:
