@@ -462,7 +462,7 @@ def resolver_ruta_imagen(ruta_raw):
     # Si no encontró nada, devolvemos None
     return None
 # ==========================================
-# MODULO: MAESTRO DE CORREDORES (VERSIÓN GLOBAL E ICONIZADA)
+# MODULO: MAESTRO DE CORREDORES (TEXTO PURO RIDXXX)
 # ==========================================
 if "👥 Maestro de Corredores" in opcion_menu:
     import datetime  
@@ -472,7 +472,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
         st.session_state.mostrar_registro_rider = False
 
     # =======================================================
-    # PANTALLA A: FORMULARIO DE INSCRIPCIÓN (FORMATO RIDXXX)
+    # PANTALLA A: FORMULARIO DE INSCRIPCIÓN (GUARDA TEXTO RIDXXX)
     # =======================================================
     if st.session_state.mostrar_registro_rider:
         st.markdown("### 📝 Inscripción Oficial de Corredor")
@@ -481,14 +481,13 @@ if "👥 Maestro de Corredores" in opcion_menu:
             st.session_state.mostrar_registro_rider = False
             st.rerun()
             
-        # Lógica inteligente para calcular el próximo código único sin repetir
         def obtener_proximo_id():
             try:
                 res = supabase.table("riders_master").select("id_rider").execute()
                 ids_actuales = []
                 for r in res.data:
                     val = str(r.get('id_rider', ''))
-                    # Extraemos solo los números por si acaso hay mezcla de formatos
+                    # Filtramos solo los números del string para calcular el consecutivo real
                     digitos = ''.join(c for c in val if c.isdigit())
                     if digitos:
                         ids_actuales.append(int(digitos))
@@ -497,12 +496,10 @@ if "👥 Maestro de Corredores" in opcion_menu:
                 return 1
                 
         proximo_id = obtener_proximo_id()
-        # ✨ SOLUCIÓN CÓDIGO: Forzamos el formato RID001, RID010, RID100
         id_formateado = f"RID{proximo_id:03d}"
         url_foto_generada = f"https://gaxnteisqvvkjavhtmgm.supabase.co/storage/v1/object/public/riders-photos/{id_formateado}.jpeg"
 
         with st.form("form_nuevo_rider"):
-            # Le mostramos el código estético al usuario para su identidad visual
             st.markdown(f"### 🆔 Código DSA Asignado: `{id_formateado}`")
             st.caption(f"Tu foto de perfil en el servidor quedará vinculada automáticamente como: `{id_formateado}.jpeg`")
             
@@ -555,9 +552,9 @@ if "👥 Maestro de Corredores" in opcion_menu:
                         except Exception as e:
                             st.warning(f"Aviso de imagen: {e}")
 
-                    # 🚀 SOLUCIÓN DEFINITIVA: Guardamos el número puro (39) para satisfacer a Supabase
+                    # 🚀 AQUÍ SE GUARDARÁ EL TEXTO "RID039" IMPECABLE Y PERFECTAMENTE ALINEADO
                     nuevo_registro = {
-                        "id_rider": proximo_id,  # Mandamos el número entero limpio
+                        "id_rider": id_formateado,  
                         "nombre": nombre.strip().upper(),
                         "categoria_base": categoria_base,
                         "estado_pais": estado_pais_combinado,
@@ -572,7 +569,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
                     
                     try:
                         supabase.table("riders_master").insert(nuevo_registro).execute()
-                        st.success(f"🎉 ¡Inscripción procesada! Bienvenido a la DSA con tu código oficial: {id_formateado}.")
+                        st.success(f"🎉 ¡Inscripción procesada! Registrado exitosamente bajo el código: {id_formateado}.")
                         time.sleep(2)
                         st.session_state.mostrar_registro_rider = False
                         st.rerun()
@@ -580,7 +577,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
                         st.error(f"Error al guardar en Supabase: {e}")
 
     # =======================================================
-    # PANTALLA B: TABLA PRINCIPAL CON ICONOS HD COMPACTOS
+    # PANTALLA B: TABLA PRINCIPAL CON FORMATO DE TEXTO PROTEGIDO
     # =======================================================
     else:
         col_t, col_b = st.columns([3, 1])
@@ -589,7 +586,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
             st.write("Historial y base de datos de atletas registrados oficialmente en el sistema.")
         with col_b:
             st.write("<br>", unsafe_allow_html=True)
-            if st.button("➕ REGÍSTRATE AQUI RIDER", use_container_width=True):
+            if st.button("➕ REGÍSTRATE CORREDOR", use_container_width=True):
                 st.session_state.mostrar_registro_rider = True
                 st.rerun()
 
@@ -605,14 +602,11 @@ if "👥 Maestro de Corredores" in opcion_menu:
 
             df_riders["total_eventos"] = pd.to_numeric(df_riders["total_eventos"], errors='coerce').fillna(0)
             
-            # --- FUNCIÓN CORREGIDA CON RESOLUCIÓN EN HD (w80) ---
             def obtener_url_bandera(texto):
                 text_str = str(texto or '').strip()
                 if not text_str:
-                    return "https://flagcdn.com/w80/un.png" # HD por defecto
-                
+                    return "https://flagcdn.com/w80/un.png"
                 pais_codigo = text_str.split("|")[0].strip().lower()
-                # 🚀 SOLUCIÓN: Cambiamos w20 por w80 para traer el archivo en alta definición
                 return f"https://flagcdn.com/w80/{pais_codigo}.png"
 
             def obtener_estado_puro(texto):
@@ -622,12 +616,16 @@ if "👥 Maestro de Corredores" in opcion_menu:
             df_riders["Bandera_URL"] = df_riders["estado_pais"].apply(obtener_url_bandera)
             df_riders["Estado_Limpio"] = df_riders["estado_pais"].apply(obtener_estado_puro)
 
-            # --- FORMATO SERIAL RIDXXX EN LA TABLA ---
+            # --- PARSEO INTELIGENTE PARA LA TABLA ---
             def mapear_codigo_texto(val):
+                val_str = str(val).strip()
+                if val_str.startswith("RID"):
+                    return val_str  # Si ya es "RID039", lo deja pasar intacto
                 try:
-                    return f"RID{int(val):03d}"
+                    return f"RID{int(val_str):03d}"  # Si hay algún número viejo suelto (ej: 2), lo maquilla
                 except:
-                    return str(val)
+                    return val_str
+
             df_riders["Codigo_Texto"] = df_riders["id_rider"].apply(mapear_codigo_texto)
 
             # --- ORDENACIÓN ---
@@ -640,13 +638,11 @@ if "👥 Maestro de Corredores" in opcion_menu:
             df_vista = df_riders[["foto_url", "Codigo_Texto", "nombre", "Bandera_URL", "Estado_Limpio", "categoria_base", "instagram", "total_eventos"]].copy()
             df_vista.columns = ["Foto", "Código", "Nombre", "País", "Estado", "Categoría", "Instagram", "Eventos"]
             
-            # --- RENDERIZADO CON CONFIGURACIÓN DE COLUMNAS ESTRECHAS ---
             st.dataframe(
                 df_vista.set_index("Código"),
                 column_config={
                     "Foto": st.column_config.ImageColumn("Avatar", width="small"),
-                    # Dejamos width="small" para que la celda sea compacta, pero la imagen interna será nítida
-                    "País": st.column_config.ImageColumn("País", width="small", help="Bandera de origen"),
+                    "País": st.column_config.ImageColumn("País", width="small"),
                     "Instagram": st.column_config.LinkColumn("Instagram", display_text="📸 Ver Perfil"),
                     "Eventos": st.column_config.NumberColumn("Eventos", format="%d")
                 },
@@ -654,7 +650,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
             )
         else:
             st.info("La base de datos de corredores del Maestro se encuentra vacía.")
-
+            
 # MODULO: INSCRIPCIÓN DE VÁLIDA
 # ==========================================
 elif "📝 Inscripción de Válida" in opcion_menu:
