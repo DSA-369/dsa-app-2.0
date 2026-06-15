@@ -464,18 +464,182 @@ def resolver_ruta_imagen(ruta_raw):
 # MODULO: MAESTRO DE CORREDORES
 # ==========================================
 if "👥 Maestro de Corredores" in opcion_menu:
-    st.subheader("👥 Maestro Global de Corredores")
-    st.write("Visualización y gestión de la base de datos histórica de atletas registrados.")
     
-    riders_lista = obtener_riders_desde_db()
-    if riders_lista:
-        df_riders = pd.DataFrame(riders_lista)
-        df_riders_vista = df_riders.drop(columns=["foto_url"], errors="ignore")
-        df_riders_vista.columns = ["Código", "Nombre", "Categoría Base"]
-        st.dataframe(df_riders_vista.set_index("Código"), use_container_width=True)
-    else:
-        st.info("La base de datos de corredores del Maestro se encuentra vacía.")
+    # Interruptor de pantalla para alternar entre Tabla y Registro público
+    if "mostrar_registro_rider" not in st.session_state:
+        st.session_state.mostrar_registro_rider = False
 
+    # =======================================================
+    # PANTALLA A: FORMULARIO DE INSCRIPCIÓN (Se abre al presionar el botón)
+    # =======================================================
+    if st.session_state.mostrar_registro_rider:
+        st.markdown("### 📝 Inscripción Oficial de Corredor")
+        
+        # Botón para cancelar y regresar
+        if st.button("⬅️ Cancelar y volver al Maestro"):
+            st.session_state.mostrar_registro_rider = False
+            st.rerun()
+            
+        # Lógica automática para calcular el próximo ID disponible
+        def obtener_proximo_id():
+            try:
+                res = supabase.table("riders_master").select("id_rider").execute()
+                ids_actuales = [int(r['id_rider']) for r in res.data if str(r['id_rider']).isdigit()]
+                return max(ids_actuales) + 1 if ids_actuales else 1
+            except:
+                return 1
+                
+        proximo_id = obtener_proximo_id()
+        id_formateado = f"RID{proximo_id:03d}"
+        url_foto_generada = f"https://gaxnteisqvvkjavhtmgm.supabase.co/storage/v1/object/public/riders-photos/{id_formateado}.jpeg"
+
+        with st.form("form_nuevo_rider"):
+            st.info(f"Tu Código de Corredor asignado será el: **{proximo_id}** (Tu foto se guardará como: `{id_formateado}.jpeg`)")
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                nombre = st.text_input("Nombre Completo *", placeholder="Ej: JUAN PÉREZ")
+                categoria_base = st.selectbox("Categoría Principal *", 
+                                              ["Open Skate", "Femenino Skate", "Junior Skate", "Master Skate", 
+                                               "Open Inline", "Femenino Inline", "Junior Inline", "Streetluge"])
+                
+                # RESPUESTA 2: Selectbox intuitivo de país con banderas + Entrada de texto para Ciudad/Estado
+                pais_sel = st.selectbox("Selecciona tu País *", 
+                                        ["VE", "CO", "AR", "MX", "CL", "US"], 
+                                        format_func=lambda x: {"VE": "🇻🇪 VE", "CO": "🇨🇴 CO", "AR": "🇦🇷 AR", "MX": "🇲🇽 MX", "CL": "🇨🇱 CL", "US": "🇺🇸 US"}.get(x, x))
+                ciudad_input = st.text_input("Ciudad o Estado que representas *", placeholder="Ej: CARACAS o BOGOTA")
+                fecha_nacimiento = st.date_input("Fecha de Nacimiento")
+                
+            with col2:
+                correo = st.text_input("Correo Electrónico *")
+                telefono = st.text_input("Teléfono de Contacto", placeholder="+58...")
+                telefono_emergencia = st.text_input("Teléfono de Emergencia")
+                instagram = st.text_input("Usuario de Instagram", placeholder="Ej: jjuandh (escribe solo tu usuario sin el @)")
+                
+            st.markdown("---")
+            st.write("📸 **Foto de Perfil Oficial**")
+            st.markdown(f"*El sistema la renombrará automáticamente en el servidor como `{id_formateado}.jpeg`*")
+            
+            foto_archivo = st.file_uploader("Sube tu foto en formato cuadrado (JPG / PNG)", type=['jpg', 'jpeg', 'png'])
+
+            submit = st.form_submit_button("🚀 Registrar mi perfil en la DSA")
+
+            if submit:
+                if not nombre.strip() or not correo.strip() or not ciudad_input.strip():
+                    st.error("⚠️ Los campos marcados con asterisco (*) son estrictamente obligatorios.")
+                else:
+                    # Unimos automáticamente el País y la Ciudad con el formato de Supabase: CO | BOGOTA
+                    estado_pais_combinado = f"{pais_sel} | {ciudad_input.strip().upper()}"
+                    
+                    # Formateamos el enlace de Instagram automáticamente
+                    insta_limpio = instagram.strip().replace("@", "")
+                    if insta_limpio and not insta_limpio.startswith("http"):
+                        insta_limpio = f"https://www.instagram.com/{insta_limpio}/"
+                        
+                    # Subida del archivo de imagen a Supabase Storage
+                    if foto_archivo:
+                        try:
+                            supabase.storage.from_("riders-photos").upload(
+                                file=foto_archivo.getvalue(),
+                                path=f"{id_formateado}.jpeg",
+                                file_options={"content-type": foto_archivo.type, "x-upsert": "true"}
+                            )
+                        except Exception as e:
+                            st.warning(f"Aviso de imagen: {e}. El perfil se creará con la URL de marcador de posición.")
+
+                    # Creación del registro limpio para la base de datos
+                    nuevo_registro = {
+                        "id_rider": proximo_id,
+                        "nombre": nombre.strip().upper(),
+                        "categoria_base": categoria_base,
+                        "estado_pais": estado_pais_combinado,
+                        "fecha_nacimiento": str(fecha_nacimiento),
+                        "correo": correo.strip(),
+                        "telefono": telefono.strip(),
+                        "telefono_emergencia": telefono_emergencia.strip(),
+                        "instagram": insta_limpio if insta_limpio else None,
+                        "foto_url": url_foto_generada,
+                        "total_eventos": 0
+                    }
+                    
+                    try:
+                        supabase.table("riders_master").insert(nuevo_registro).execute()
+                        st.success("🎉 ¡Inscripción procesada con éxito! Bienvenido a la base de datos de la DSA.")
+                        time.sleep(2)
+                        st.session_state.mostrar_registro_rider = False
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Error al guardar en la base de datos: {e}")
+
+    # =======================================================
+    # PANTALLA B: TABLA PRINCIPAL (Consulta pública compacta)
+    # =======================================================
+    else:
+        # Fila del Título y el Botón Naranja llamativo
+        col_t, col_b = st.columns([3, 1])
+        with col_t:
+            st.subheader("👥 Maestro Global de Corredores")
+            st.write("Historial y base de datos de atletas registrados oficialmente en el sistema.")
+        with col_b:
+            st.write("<br>", unsafe_allow_html=True) # Pequeño espacio para alinear perfectamente
+            if st.button("➕ REGÍSTRATE COMO CORREDOR", use_container_width=True):
+                st.session_state.mostrar_registro_rider = True
+                st.rerun()
+
+        # Descarga de datos desde Supabase
+        riders_lista = obtener_riders_desde_db()
+        if riders_lista:
+            df_riders = pd.DataFrame(riders_lista)
+            
+            # --- 1. BLINDAJE ANTIBALAS CONTRA EL KEYERROR ---
+            # Forzamos a que Pandas reconozca todas las columnas solicitadas aunque vengan vacías
+            cols_necesarias = ["foto_url", "id_rider", "nombre", "estado_pais", "categoria_base", "instagram", "total_eventos"]
+            for col in cols_necesarias:
+                if col not in df_riders.columns:
+                    df_riders[col] = 0 if col == "total_eventos" else None
+
+            # Forzamos la columna de eventos a tratarse como números enteros limpios
+            df_riders["total_eventos"] = pd.to_numeric(df_riders["total_eventos"], errors='coerce').fillna(0)
+            
+            # --- 2. CONVERTIR SIGLAS EN BANDERAS PARA LA TABLA ---
+            def formatear_bandera_tabla(texto):
+                flags = {"VE": "🇻🇪", "CO": "🇨🇴", "AR": "🇦🇷", "MX": "🇲🇽", "CL": "🇨🇱", "US": "🇺🇸"}
+                if not texto or "|" not in str(texto):
+                    sigla_pura = str(texto).strip().upper()
+                    return f"{flags.get(sigla_pura, '📍')} {sigla_pura}"
+                
+                parts = str(texto).split("|")
+                pais = parts[0].strip().upper()
+                estado = parts[1].strip().upper()
+                
+                emoji = flags.get(pais, "📍")
+                return f"{emoji} {pais} | {estado}"
+
+            df_riders["Pais_Estado_Formateado"] = df_riders["estado_pais"].apply(formatear_bandera_tabla)
+
+            # --- 3. ORDENACIÓN LÓGICA POR CATEGORÍAS (De la 1 a la última) ---
+            orden_categorias = ["Open Skate", "Femenino Skate", "Junior Skate", "Master Skate", "Open Inline", "Femenino Inline", "Junior Inline"]
+            df_riders['categoria_base'] = df_riders['categoria_base'].fillna("Sin Categoría")
+            df_riders['categoria_cat'] = pd.Categorical(df_riders['categoria_base'], categories=orden_categorias, ordered=True)
+            df_riders = df_riders.sort_values(['categoria_cat', 'nombre'])
+            
+            # --- 4. SELECCIÓN DE VISTA COMPACTA (Respuesta 4) ---
+            df_vista = df_riders[["foto_url", "id_rider", "nombre", "Pais_Estado_Formateado", "categoria_base", "instagram", "total_eventos"]].copy()
+            df_vista.columns = ["Foto", "Código", "Nombre", "País | Estado", "Categoría", "Instagram", "Eventos"]
+            
+            # --- 5. RENDERIZADO DEL DATAFRAME PRO ---
+            st.dataframe(
+                df_vista.set_index("Código"),
+                column_config={
+                    "Foto": st.column_config.ImageColumn("Avatar", help="Foto de perfil del atleta"),
+                    # RESPUESTA 1: El enlace ahora se camufla como un botón/icono limpio con texto personalizado
+                    "Instagram": st.column_config.LinkColumn("Instagram", display_text="📸 Ver Perfil", help="Haz clic para abrir el Instagram de este atleta"),
+                    "Eventos": st.column_config.NumberColumn("Eventos", format="%d", help="Total de válidas completadas")
+                },
+                use_container_width=True
+            )
+        else:
+            st.info("La base de datos de corredores del Maestro se encuentra vacía.")
 # ==========================================
 # MODULO: INSCRIPCIÓN DE VÁLIDA
 # ==========================================
