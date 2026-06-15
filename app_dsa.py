@@ -588,7 +588,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
             st.write("Historial y base de datos de atletas registrados oficialmente en el sistema.")
         with col_b:
             st.write("<br>", unsafe_allow_html=True)
-            if st.button("➕ REGÍSTRATE CORREDOR", use_container_width=True):
+            if st.button("➕ REGÍSTRATE AQUI RIDER", use_container_width=True):
                 st.session_state.mostrar_registro_rider = True
                 st.rerun()
 
