@@ -453,17 +453,81 @@ def resolver_ruta_imagen(ruta_raw):
 # MODULO: MAESTRO DE CORREDORES
 # ==========================================
 if "👥 Maestro de Corredores" in opcion_menu:
-    st.subheader("👥 Maestro Global de Corredores")
-    st.write("Visualización y gestión de la base de datos histórica de atletas registrados.")
-    
-    riders_lista = obtener_riders_desde_db()
-    if riders_lista:
-        df_riders = pd.DataFrame(riders_lista)
-        df_riders_vista = df_riders.drop(columns=["foto_url"], errors="ignore")
-        df_riders_vista.columns = ["Código", "Nombre", "Categoría Base"]
-        st.dataframe(df_riders_vista.set_index("Código"), use_container_width=True)
+    st.title("👥 Maestro de Corredores")
+
+    # 1. VISTA PRIVADA (ADMINISTRADOR / JUEZ)
+    if st.session_state.admin_auth:
+        st.success("🔓 Modo Administrador Activo")
+        st.subheader("👥 Maestro Global de Corredores")
+        st.write("Visualización y gestión de la base de datos histórica de atletas registrados.")
+        
+        riders_lista = obtener_riders_desde_db()
+        if riders_lista:
+            df_riders = pd.DataFrame(riders_lista)
+            df_riders_vista = df_riders.drop(columns=["foto_url"], errors="ignore")
+            df_riders_vista.columns = ["Código", "Nombre", "Categoría Base"]
+            st.dataframe(df_riders_vista.set_index("Código"), use_container_width=True)
+        else:
+            st.info("La base de datos de corredores del Maestro se encuentra vacía.")
+
+    # 2. VISTA PÚBLICA (AUTO-INSCRIPCIÓN DE RIDERS)
     else:
-        st.info("La base de datos de corredores del Maestro se encuentra vacía.")
+        st.markdown("### 📝 Auto-Inscripción de Nuevos Corredores")
+        st.info("Regístrate en la base de datos oficial de la DSA para obtener tu perfil de competidor.")
+        
+        def obtener_proximo_id():
+            try:
+                res = supabase.table("riders_master").select("id_rider").execute()
+                ids_actuales = []
+                for r in res.data:
+                    try:
+                        ids_actuales.append(int(r['id_rider']))
+                    except (ValueError, TypeError):
+                        pass
+                return max(ids_actuales) + 1 if ids_actuales else 1
+            except Exception:
+                return None
+
+        proximo_id = obtener_proximo_id()
+
+        with st.form("form_registro_publico"):
+            st.markdown("#### 👤 Datos Personales")
+            st.text_input("ID Rider Asignado", value=str(proximo_id) if proximo_id else "Calculando...", disabled=True)
+            
+            nombre_nuevo = st.text_input("Nombre Completo *", placeholder="Ej: Carlos Pérez")
+            categoria_base = st.selectbox("Categoría Principal *", 
+                                          ["Open Skate", "Junior Skate", "Femenino Skate", "Master Skate", "Open Inline", "Junior Inline", "Femenino Inline", "Master Inline", "Open Streetluge"])
+            estado_pais = st.text_input("Estado / Ciudad / País", placeholder="Ej: Caracas, Venezuela")
+            instagram = st.text_input("Instagram", placeholder="Ej: @tu_usuario")
+            
+            st.markdown("*(Puedes dejar en blanco la URL de la foto por ahora, luego podrás actualizarla)*")
+            foto_url = st.text_input("URL de Foto (Google Drive o link directo)")
+
+            st.markdown("---")
+            submit_registro = st.form_submit_button("🚀 Registrarme Oficialmente")
+
+            if submit_registro:
+                if not nombre_nuevo.strip():
+                    st.error("⚠️ El Nombre Completo es obligatorio.")
+                elif not proximo_id:
+                    st.error("⚠️ Error de conexión. No se pudo generar el ID.")
+                else:
+                    nuevo_rider = {
+                        "id_rider": proximo_id,
+                        "nombre": nombre_nuevo.strip().upper(),
+                        "categoria_base": categoria_base,
+                        "estado_pais": estado_pais.strip(),
+                        "instagram": instagram.strip(),
+                        "foto_url": foto_url.strip()
+                    }
+                    try:
+                        supabase.table("riders_master").insert(nuevo_rider).execute()
+                        st.success(f"🎉 ¡Bienvenido a la DSA, {nombre_nuevo}! Tu registro fue exitoso.")
+                        st.balloons()
+                        time.sleep(2)
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Error al guardar: {e}")
 
 # ==========================================
 # MODULO: INSCRIPCIÓN DE VÁLIDA
