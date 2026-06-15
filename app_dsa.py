@@ -589,7 +589,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
         if riders_lista:
             df_riders = pd.DataFrame(riders_lista)
             
-            # --- BLINDAJE ANTIBALAS ---
+            # --- 1. BLINDAJE ANTIBALAS ---
             cols_necesarias = ["foto_url", "id_rider", "nombre", "estado_pais", "categoria_base", "instagram", "total_eventos"]
             for col in cols_necesarias:
                 if col not in df_riders.columns:
@@ -597,54 +597,49 @@ if "👥 Maestro de Corredores" in opcion_menu:
 
             df_riders["total_eventos"] = pd.to_numeric(df_riders["total_eventos"], errors='coerce').fillna(0)
             
-            # --- FUNCIÓN MÁGICA: TRADUCE EN TIEMPO REAL CUALQUIER PAÍS DEL MUNDO A BANDERA ---
-            def generar_bandera_dinamica(texto):
+            # --- 2. LOGÍSTICA DE UBICACIÓN COMPATIBLE CON PC Y MÓVIL ---
+            def obtener_url_bandera(texto):
+                if not texto or "|" not in str(texto):
+                    return "https://flagcdn.com/w40/un.png" # Bandera de las Naciones Unidas por defecto
+                pais_codigo = str(texto).split("|")[0].strip().lower()
+                # Retorna el enlace directo a la imagen oficial de la bandera en alta definición
+                return f"https://flagcdn.com/w40/{pais_codigo}.png"
+
+            def obtener_estado_puro(texto):
                 if not texto:
-                    return "📍 | N/A"
-                
-                texto_str = str(texto).strip().upper()
-                
-                # Función interna matemática que convierte código de 2 letras en emoji bandera
-                def iso_a_emoji(codigo_iso):
-                    if len(codigo_iso) == 2 and codigo_iso.isalpha():
-                        # Usamos los rangos Unicode de los Regional Indicator Symbols
-                        return chr(ord(codigo_iso[0]) + 127397) + chr(ord(codigo_iso[1]) + 127397)
-                    return "📍"
+                    return "N/A"
+                if "|" in str(texto):
+                    return str(texto).split("|")[1].strip().upper()
+                return str(texto).strip().upper()
 
-                if "|" in texto_str:
-                    parts = texto_str.split("|")
-                    pais_codigo = parts[0].strip()
-                    estado_texto = parts[1].strip()
-                    
-                    emoji_bandera = iso_a_emoji(pais_codigo)
-                    return f"{emoji_bandera} | {estado_texto}"
-                else:
-                    emoji_bandera = iso_a_emoji(texto_str)
-                    return f"{emoji_bandera} | {texto_str}"
+            # Creamos las dos columnas procesadas
+            df_riders["Bandera_URL"] = df_riders["estado_pais"].apply(obtener_url_bandera)
+            df_riders["Estado_Limpio"] = df_riders["estado_pais"].apply(obtener_estado_puro)
 
-            df_riders["Pais_Estado_Formateado"] = df_riders["estado_pais"].apply(generar_bandera_dinamica)
-
-            # --- ORDENACIÓN POR CATEGORÍAS ---
+            # --- 3. ORDENACIÓN POR CATEGORÍAS ---
             orden_categorias = ["Open Skate", "Femenino Skate", "Junior Skate", "Master Skate", "Open Inline", "Femenino Inline", "Junior Inline"]
             df_riders['categoria_base'] = df_riders['categoria_base'].fillna("Sin Categoría")
             df_riders['categoria_cat'] = pd.Categorical(df_riders['categoria_base'], categories=orden_categorias, ordered=True)
             df_riders = df_riders.sort_values(['categoria_cat', 'nombre'])
             
-            # --- SELECCIÓN DE VISTA FINAL ---
-            df_vista = df_riders[["foto_url", "id_rider", "nombre", "Pais_Estado_Formateado", "categoria_base", "instagram", "total_eventos"]].copy()
-            df_vista.columns = ["Foto", "Código", "Nombre", "País | Estado", "Categoría", "Instagram", "Eventos"]
+            # --- 4. SELECCIÓN DE VISTA FINAL (Separamos Bandera y Estado) ---
+            df_vista = df_riders[["foto_url", "id_rider", "nombre", "Bandera_URL", "Estado_Limpio", "categoria_base", "instagram", "total_eventos"]].copy()
+            df_vista.columns = ["Foto", "Código", "Nombre", "País", "Estado", "Categoría", "Instagram", "Eventos"]
             
+            # --- 5. RENDERIZADO DEL DATAFRAME PRO ---
             st.dataframe(
                 df_vista.set_index("Código"),
                 column_config={
                     "Foto": st.column_config.ImageColumn("Avatar"),
+                    # Renderizamos la bandera como una imagen real redonda en vez de texto emoji
+                    "País": st.column_config.ImageColumn("País", help="Bandera oficial del país"),
                     "Instagram": st.column_config.LinkColumn("Instagram", display_text="📸 Ver Perfil"),
                     "Eventos": st.column_config.NumberColumn("Eventos", format="%d")
                 },
                 use_container_width=True
             )
         else:
-            st.info("La base de datos de corredores del Maestro se encuentra vacía.")# ==========================================
+            st.info("La base de datos de corredores del Maestro se encuentra vacía.")
 
 # MODULO: INSCRIPCIÓN DE VÁLIDA
 # ==========================================
