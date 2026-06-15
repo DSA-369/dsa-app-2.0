@@ -591,29 +591,20 @@ if "👥 Maestro de Corredores" in opcion_menu:
                         st.error("⚠️ Por favor ingresa tu código y contraseña.")
                     else:
                         try:
-                            # Buscamos al corredor en Supabase
                             res = supabase.table("riders_master").select("*").eq("id_rider", login_codigo).execute()
                             if res.data:
                                 rider_db = res.data[0]
                                 contrasena_guardada = str(rider_db.get('password', '')).strip()
-                                
-                                # --- LÓGICA DE VALIDACIÓN HÍBRIDA ---
                                 es_clave_valida = False
                                 
-                                # CASO A: Es un registro viejo (Contraseña vacía o Null)
                                 if contrasena_guardada == "" or contrasena_guardada.lower() == "none":
-                                    # Permitimos el acceso si escribe "dsa2026" o su propio código (Ej: RID012)
                                     if login_pass == "dsa2026" or login_pass == login_codigo:
                                         es_clave_valida = True
-                                        # Le inyectamos una alerta visual en su sesión para avisarle que cree una clave
                                         st.toast("⚠️ Clave temporal detectada. Por favor, asigna una contraseña segura abajo.", icon="🔒")
-                                
-                                # CASO B: Es un registro nuevo (Ya tiene contraseña real guardada)
                                 else:
                                     if contrasena_guardada == login_pass:
                                         es_clave_valida = True
                                 
-                                # --- APLICAR ACCESO ---
                                 if es_clave_valida:
                                     st.session_state.rider_autenticado = rider_db
                                     st.success(f"✅ ¡Acceso concedido! Bienvenido, {rider_db.get('nombre')}.")
@@ -626,51 +617,64 @@ if "👥 Maestro de Corredores" in opcion_menu:
                         except Exception as e:
                             st.error(f"Error de conexión con el servidor: {e}")
 
-        # CASO C2: USUARIO EN LÍNEA (MOSTRAR PANEL DE EDICIÓN DE DATOS)
+        # CASO C2: USUARIO EN LÍNEA (MOSTRAR PANEL DE EDICIÓN DE DATOS CORREGIDO)
         else:
             rider = st.session_state.rider_autenticado
             st.markdown(f"#### 🛠️ Editando el Perfil de: **{rider.get('id_rider')}**")
             
-            # Botón de desconexión rápida
             if st.button("🚨 Cerrar Sesión de Corredor"):
                 st.session_state.rider_autenticado = None
                 st.rerun()
 
-            # Desglosamos la ubicación actual para precargarla de manera limpia en los selectores
+            # Desglosamos la ubicación de manera segura
             ubicacion_actual = str(rider.get('estado_pais', 'VE | CARACAS'))
             p_inicial = ubicacion_actual.split("|")[0].strip() if "|" in ubicacion_actual else "VE"
             e_inicial = ubicacion_actual.split("|")[1].strip() if "|" in ubicacion_actual else ubicacion_actual
 
-            # Desglosamos la fecha guardada
             try: f_inicial = datetime.datetime.strptime(rider.get('fecha_nacimiento', '2000-01-01'), '%Y-%m-%d').date()
             except: f_inicial = datetime.date(2000, 1, 1)
+
+            # Lista oficial de categorías
+            LISTA_CATEGORIAS_EDICION = ["Open Skate", "Femenino Skate", "Junior Skate", "Master Skate", "Open Inline", "Femenino Inline", "Junior Inline", "Streetluge"]
+
+            # 🚀 SOLUCIÓN AL VALUEERROR: Buscador seguro de índice
+            cat_guardada = str(rider.get('categoria_base', '')).strip()
+            if cat_guardada in LISTA_CATEGORIAS_EDICION:
+                idx_cat = LISTA_CATEGORIAS_EDICION.index(cat_guardada)
+            else:
+                idx_cat = 0  # Si hay un espacio o texto raro, cae en la primera por defecto sin romper la app
 
             with st.form("form_editar_rider"):
                 col_e1, col_e2 = st.columns(2)
                 with col_e1:
                     edit_nombre = st.text_input("Nombre Completo *", value=rider.get('nombre', '')).strip().upper()
-                    edit_categoria = st.selectbox("Categoría de Competición *", 
-                                                  ["Open Skate", "Femenino Skate", "Junior Skate", "Master Skate", "Open Inline", "Femenino Inline", "Junior Inline", "Streetluge"],
-                                                  index=["Open Skate", "Femenino Skate", "Junior Skate", "Master Skate", "Open Inline", "Femenino Inline", "Junior Inline", "Streetluge"].index(rider.get('categoria_base', 'Open Skate')))
+                    edit_categoria = st.selectbox("Categoría de Competición *", LISTA_CATEGORIAS_EDICION, index=idx_cat)
                     edit_pais = st.text_input("Código de tu País (2 letras) *", value=p_inicial, max_chars=2).strip().upper()
                     edit_ciudad = st.text_input("Ciudad / Estado *", value=e_inicial).strip().upper()
                     edit_fecha = st.date_input("Fecha de Nacimiento", value=f_inicial, min_value=datetime.date(1926, 1, 1))
                 
-                with col2:
+                # 🚀 SOLUCIÓN AL FORM ERROR: Corregido de col2 a col_e2
+                with col_e2:
                     edit_correo = st.text_input("Correo Electrónico *", value=rider.get('correo', '')).strip()
                     edit_pass = st.text_input("Cambiar Contraseña *", value=rider.get('password', ''), type="password").strip()
                     edit_tel = st.text_input("Teléfono de Contacto", value=rider.get('telefono', '')).strip()
                     edit_tel_em = st.text_input("Teléfono de Emergencia", value=rider.get('telefono_emergencia', '')).strip()
                     
                     insta_url_vieja = str(rider.get('instagram', ''))
-                    insta_user_viejo = insta_url_vieja.split("/")[-2] if "instagram.com" in insta_url_vieja else insta_url_vieja
+                    if "instagram.com/" in insta_url_vieja:
+                        insta_user_viejo = insta_url_vieja.split("instagram.com/")[-1].replace("/", "").strip()
+                    else:
+                        insta_user_viejo = insta_url_vieja
                     edit_insta = st.text_input("Usuario de Instagram (sin @)", value=insta_user_viejo).strip()
 
                 st.markdown("---")
                 st.write("📸 **Actualizar Foto de Perfil** (Dejar vacío si deseas conservar tu foto actual)")
                 nueva_foto = st.file_uploader("Subir nueva imagen cuadrada (JPG / PNG)", type=['jpg', 'jpeg', 'png'], key="update_photo_loader")
 
-                if st.form_submit_button("💾 Guardar y Actualizar mis Datos"):
+                # El botón ahora está perfectamente contenido e indentado dentro del formulario
+                submit_edicion = st.form_submit_button("💾 Guardar y Actualizar mis Datos")
+
+                if submit_edicion:
                     if not edit_nombre or not edit_correo or not edit_ciudad or len(edit_pais) < 2 or not edit_pass:
                         st.error("⚠️ Los campos marcados con (*) son obligatorios.")
                     else:
@@ -678,10 +682,10 @@ if "👥 Maestro de Corredores" in opcion_menu:
                         if edit_insta_limpio and not edit_insta_limpio.startswith("http"):
                             edit_insta_limpio = f"https://www.instagram.com/{edit_insta_limpio}/"
 
-                        # Si subió una nueva foto, reemplazamos el archivo existente en el bucket
+                        id_rider_actual = rider.get('id_rider')
                         if nueva_foto:
                             try:
-                                supabase.storage.from_("riders-photos").upload(file=nueva_foto.getvalue(), path=f"{rider.get('id_rider')}.jpeg", file_options={"content-type": nueva_foto.type, "x-upsert": "true"})
+                                supabase.storage.from_("riders-photos").upload(file=nueva_foto.getvalue(), path=f"{id_rider_actual}.jpeg", file_options={"content-type": nueva_foto.type, "x-upsert": "true"})
                             except: pass
 
                         datos_actualizados = {
@@ -697,9 +701,8 @@ if "👥 Maestro de Corredores" in opcion_menu:
                         }
 
                         try:
-                            supabase.table("riders_master").update(datos_actualizados).eq("id_rider", rider.get('id_rider')).execute()
+                            supabase.table("riders_master").update(datos_actualizados).eq("id_rider", id_rider_actual).execute()
                             st.success("🎉 ¡Tu perfil ha sido actualizado con éxito!")
-                            # Actualizamos los datos en caché de sesión para ver los cambios reflejados
                             st.session_state.rider_autenticado.update(datos_actualizados)
                             time.sleep(1.5)
                             st.rerun()
