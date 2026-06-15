@@ -25,12 +25,10 @@ st.set_page_config(
 # Paleta de colores DSA (Fondo Negro, Acentos en Azul de Carrera y Naranja Enérgico)
 st.markdown("""
     <style>
-        /* Fondo Principal Oscuro / Negro */
-        .stApp {
-            background-color: #0c0f17;
-            color: #f1f5f9;
-        }
-
+    /* Ocultar cabecera, menú de opciones y marca de agua de Streamlit */
+        [data-testid="stHeader"] {visibility: hidden;}
+        [data-testid="stToolbar"] {visibility: hidden;}
+        footer {visibility: hidden;}
         /* Fondo Principal Oscuro / Negro */
         .stApp {
             background-color: #0c0f17;
@@ -134,17 +132,12 @@ else:
 # 3. CARGA DE LOGO REAL DE LA DSA
 # ==========================================
 # Traer el logo directamente desde Supabase
-# Traer el logo directamente desde Supabase
 LOGO_URL = "https://gaxnteisqvvkjavhtmgm.supabase.co/storage/v1/object/public/directorio-partners/SPOND36.PNG"
-
-# 1. Mostrar la imagen del logo
 st.sidebar.image(LOGO_URL, use_container_width=True)
 
-# 2. Mostrar el subtítulo centrado debajo de la imagen
-st.sidebar.markdown("<h3 style='color:#ff7a00; text-align:center; margin-top: -10px;'>🏁 DSA 2.0</h3>", unsafe_allow_html=True)
+# La línea divisoria debajo del logo
+st.sidebar.markdown("<hr style='border: 1px solid #1e293b;'/>", unsafe_allow_html=True)
 
-# 3. La línea divisoria
-st.sidebar.markdown("<hr style='border: 1px solid #1e293b; margin-top: 5px;'/>", unsafe_allow_html=True)
 # ==========================================
 # 4. NAVEGACIÓN MODULAR (RANKING EN SEGUNDO LUGAR)
 # ==========================================
@@ -177,7 +170,7 @@ st.markdown("""
 if "admin_auth" not in st.session_state:
     st.session_state.admin_auth = False
 
-modulos_publicos = ["🗂️ Historial de Válidas", "🌍 Ranking Nacional"]
+modulos_publicos = ["🗂️ Historial de Válidas", "🌍 Ranking Nacional", "👥 Maestro de Corredores"]
 
 # Si elige un módulo restringido y no está logueado, lo bloqueamos
 if opcion_menu not in modulos_publicos and not st.session_state.admin_auth:
