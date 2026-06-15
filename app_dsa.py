@@ -138,9 +138,6 @@ st.sidebar.image(LOGO_URL, use_container_width=True)
 # La línea divisoria debajo del logo
 st.sidebar.markdown("<hr style='border: 1px solid #1e293b;'/>", unsafe_allow_html=True)
 
-# ==========================================
-# 4. NAVEGACIÓN MODULAR (RANKING EN SEGUNDO LUGAR)
-# ==========================================
 st.sidebar.title("🏁 Menú de Carrera")
 opcion_menu = st.sidebar.radio(
     "Navegación:",
@@ -163,7 +160,6 @@ st.markdown("""
         <p style='margin:5px 0 0 0; color:#cbd5e1; font-weight:bold;'>Plataforma Avanzada de Gestión Deportiva, Brackets y Clasificación de Alto Rendimiento 🏆</p>
     </div>
 """, unsafe_allow_html=True)
-
 # ==========================================
 # 🔒 SISTEMA DE SEGURIDAD Y ACCESO PÚBLICO
 # ==========================================
