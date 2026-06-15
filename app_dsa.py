@@ -588,25 +588,43 @@ if "👥 Maestro de Corredores" in opcion_menu:
                 
                 if st.button("🔓 Entrar a mi Perfil", use_container_width=True):
                     if not login_codigo or not login_pass:
-                        st.error("⚠️ Completa ambos campos.")
+                        st.error("⚠️ Por favor ingresa tu código y contraseña.")
                     else:
                         try:
-                            # Buscamos al corredor por su código exacto
+                            # Buscamos al corredor en Supabase
                             res = supabase.table("riders_master").select("*").eq("id_rider", login_codigo).execute()
                             if res.data:
                                 rider_db = res.data[0]
-                                # Verificamos contraseña de forma segura
-                                if str(rider_db.get('password', '')).strip() == login_pass:
+                                contrasena_guardada = str(rider_db.get('password', '')).strip()
+                                
+                                # --- LÓGICA DE VALIDACIÓN HÍBRIDA ---
+                                es_clave_valida = False
+                                
+                                # CASO A: Es un registro viejo (Contraseña vacía o Null)
+                                if contrasena_guardada == "" or contrasena_guardada.lower() == "none":
+                                    # Permitimos el acceso si escribe "dsa2026" o su propio código (Ej: RID012)
+                                    if login_pass == "dsa2026" or login_pass == login_codigo:
+                                        es_clave_valida = True
+                                        # Le inyectamos una alerta visual en su sesión para avisarle que cree una clave
+                                        st.toast("⚠️ Clave temporal detectada. Por favor, asigna una contraseña segura abajo.", icon="🔒")
+                                
+                                # CASO B: Es un registro nuevo (Ya tiene contraseña real guardada)
+                                else:
+                                    if contrasena_guardada == login_pass:
+                                        es_clave_valida = True
+                                
+                                # --- APLICAR ACCESO ---
+                                if es_clave_valida:
                                     st.session_state.rider_autenticado = rider_db
-                                    st.success(f"✅ ¡Bienvenido de nuevo, {rider_db.get('nombre')}!")
+                                    st.success(f"✅ ¡Acceso concedido! Bienvenido, {rider_db.get('nombre')}.")
                                     time.sleep(1.5)
                                     st.rerun()
                                 else:
                                     st.error("❌ Contraseña incorrecta para este código.")
                             else:
-                                st.error("❌ El código ingresado no existe en el sistema.")
+                                st.error("❌ El código de corredor no existe en la base de datos.")
                         except Exception as e:
-                            st.error(f"Error de conexión: {e}")
+                            st.error(f"Error de conexión con el servidor: {e}")
 
         # CASO C2: USUARIO EN LÍNEA (MOSTRAR PANEL DE EDICIÓN DE DATOS)
         else:
