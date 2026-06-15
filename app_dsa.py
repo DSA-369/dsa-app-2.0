@@ -563,8 +563,10 @@ if "👥 Maestro de Corredores" in opcion_menu:
         col_t, col_b = st.columns([3, 1])
         with col_t:
             st.subheader("👥 Maestro Global de Corredores")
+            st.write("Visualización y gestión de la base de datos histórica de atletas registrados.")
         with col_b:
-            if st.button("➕ Regístrate", use_container_width=True):
+            st.write("") # Pequeño espacio para alinear el botón
+            if st.button("➕ Regístrate como corredor", use_container_width=True):
                 st.session_state.mostrar_registro_rider = True
                 st.rerun()
 
@@ -573,35 +575,41 @@ if "👥 Maestro de Corredores" in opcion_menu:
         if riders_lista:
             df_riders = pd.DataFrame(riders_lista)
             
-            # --- AUDITORÍA: ¿QUÉ NOMBRES ESTÁ VIENDO PANDAS? ---
-            # Esto imprimirá los nombres reales para que los veamos en la app
-            st.write("Columnas detectadas en la base de datos:", df_riders.columns.tolist())
-            
-            # --- BLINDAJE DE COLUMNAS ---
-            cols_deseadas = ["foto_url", "id_rider", "nombre", "estado_pais", "categoria_base", "total_eventos"]
-            
-            for col in cols_deseadas:
-                if col not in df_riders.columns:
-                    df_riders[col] = None if col != "total_eventos" else 0
-            
-            # --- ORDENAR Y DIBUJAR ---
-            orden_categorias = ["Open Skate", "Femenino Skate", "Junior Skate", "Master Skate", "Open Inline", "Femenino Inline", "Junior Inline"]
+            # --- 1. ORDENAR LA TABLA POR CATEGORÍAS ---
+            orden_categorias = [
+                "Open Skate", "Femenino Skate", "Junior Skate", "Master Skate", 
+                "Open Inline", "Femenino Inline", "Junior Inline"
+            ]
+            # Convertimos la columna al tipo "Categórico" de Pandas para forzar nuestro orden
             df_riders['categoria_base'] = pd.Categorical(df_riders['categoria_base'], categories=orden_categorias, ordered=True)
+            # Ordenamos primero por Categoría y luego alfabéticamente por Nombre
             df_riders = df_riders.sort_values(['categoria_base', 'nombre'])
             
-            df_vista = df_riders[cols_deseadas].copy()
+            # --- 2. ASEGURAR COLUMNAS ---
+            # Si "total_eventos" aún no existe en Supabase, lo creamos virtualmente para que no de error
+            if "total_eventos" not in df_riders.columns:
+                df_riders["total_eventos"] = 0
+                
+            # Seleccionamos y ordenamos las columnas para mostrarlas
+            df_vista = df_riders[["foto_url", "id_rider", "nombre", "estado_pais", "categoria_base", "total_eventos"]].copy()
             df_vista.columns = ["Foto", "Código", "Nombre", "Estado / País", "Categoría", "Eventos"]
             
+            # --- 3. DIBUJAR LA TABLA CON FOTOS REDONDAS ---
+            # st.column_config nos permite transformar URLs de texto en imágenes redondas/iconos
             st.dataframe(
                 df_vista.set_index("Código"),
                 column_config={
-                    "Foto": st.column_config.ImageColumn("Avatar", help="Foto oficial"),
-                    "Eventos": st.column_config.NumberColumn("Eventos", format="%d")
+                    "Foto": st.column_config.ImageColumn(
+                        "Avatar", help="Foto oficial del corredor"
+                    ),
+                    "Eventos": st.column_config.NumberColumn(
+                        "Eventos", format="%d", help="Cantidad de válidas corridas"
+                    )
                 },
                 use_container_width=True
             )
         else:
-            st.info("La base de datos de corredores está vacía.")
+            st.info("La base de datos de corredores del Maestro se encuentra vacía.")
 # ==========================================
 # MODULO: INSCRIPCIÓN DE VÁLIDA (VERSIÓN BLINDADA)
 # ==========================================
