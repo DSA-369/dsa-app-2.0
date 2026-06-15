@@ -502,8 +502,9 @@ if "👥 Maestro de Corredores" in opcion_menu:
         url_foto_generada = f"https://gaxnteisqvvkjavhtmgm.supabase.co/storage/v1/object/public/riders-photos/{id_formateado}.jpeg"
 
         with st.form("form_nuevo_rider"):
+            # Le mostramos el código estético al usuario para su identidad visual
             st.markdown(f"### 🆔 Código DSA Asignado: `{id_formateado}`")
-            st.caption(f"Tu archivo de foto en el servidor se guardará vinculada a tu serial: `{id_formateado}.jpeg`")
+            st.caption(f"Tu foto de perfil en el servidor quedará vinculada automáticamente como: `{id_formateado}.jpeg`")
             
             col1, col2 = st.columns(2)
             with col1:
@@ -518,7 +519,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
                 fecha_nacimiento = st.date_input(
                     "Fecha de Nacimiento",
                     value=datetime.date(2000, 1, 1),  
-                    min_value=datetime.date(1926, 1, 1),  # Rango libre de 100 años
+                    min_value=datetime.date(1926, 1, 1),  
                     max_value=datetime.date.today()  
                 )
                 
@@ -554,9 +555,9 @@ if "👥 Maestro de Corredores" in opcion_menu:
                         except Exception as e:
                             st.warning(f"Aviso de imagen: {e}")
 
-                    # Guardamos el número limpio en la BD para no romper integridades
+                    # 🚀 SOLUCIÓN DEFINITIVA: Guardamos el número puro (39) para satisfacer a Supabase
                     nuevo_registro = {
-                        "id_rider": proximo_id,
+                        "id_rider": proximo_id,  # Mandamos el número entero limpio
                         "nombre": nombre.strip().upper(),
                         "categoria_base": categoria_base,
                         "estado_pais": estado_pais_combinado,
@@ -571,12 +572,12 @@ if "👥 Maestro de Corredores" in opcion_menu:
                     
                     try:
                         supabase.table("riders_master").insert(nuevo_registro).execute()
-                        st.success(f"🎉 ¡Inscripción procesada! Bienvenido a la DSA con el código {id_formateado}.")
+                        st.success(f"🎉 ¡Inscripción procesada! Bienvenido a la DSA con tu código oficial: {id_formateado}.")
                         time.sleep(2)
                         st.session_state.mostrar_registro_rider = False
                         st.rerun()
                     except Exception as e:
-                        st.error(f"Error al guardar: {e}")
+                        st.error(f"Error al guardar en Supabase: {e}")
 
     # =======================================================
     # PANTALLA B: TABLA PRINCIPAL CON ICONOS HD COMPACTOS
