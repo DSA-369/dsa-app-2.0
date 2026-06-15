@@ -505,7 +505,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
                 
                 # REQUERIMIENTO 1: Entrada libre del código de país de 2 letras
                 pais_input = st.text_input("Código de tu País (2 letras - Ej: VE, PA, CO, ES, US) *", max_chars=2, placeholder="VE").strip().upper()
-                ciudad_input = st.text_input("Ciudad o Estado que representas *", placeholder="Ej: CHIRIKÍ o MADRID")
+                ciudad_input = st.text_input("Ciudad o Estado que representas *", placeholder="Ej: CARACAS o MADRID")
                 
                 # REQUERIMIENTO 2: Rango de fecha libre abriendo un mínimo de 100 años (Desde 1926)
                 fecha_nacimiento = st.date_input(
@@ -519,7 +519,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
                 correo = st.text_input("Correo Electrónico *")
                 telefono = st.text_input("Teléfono de Contacto", placeholder="+58...")
                 telefono_emergencia = st.text_input("Teléfono de Emergencia")
-                instagram = st.text_input("Usuario de Instagram", placeholder="Ej: jjuandh (sin el @)")
+                instagram = st.text_input("Usuario de Instagram", placeholder="Ej: Tu_usuario (sin el @)")
                 
             st.markdown("---")
             st.write("📸 **Foto de Perfil Oficial**")
