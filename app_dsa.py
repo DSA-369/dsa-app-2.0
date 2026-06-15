@@ -468,7 +468,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
     if riders_lista:
         df_riders = pd.DataFrame(riders_lista)
         df_riders_vista = df_riders.drop(columns=["foto_url"], errors="ignore")
-        df_riders_vista.columns = ["Código", "Nombre", "Categoría Base"]
+        df_riders_vista.columns = ["Código","foto_url","Nombre","estado_pais","Categoría Base","total_eventos"] if "foto_url" in df_riders.columns else ["Código", "Nombre", "Categoría Base","total_eventos"]
         st.dataframe(df_riders_vista.set_index("Código"), use_container_width=True)
     else:
         st.info("La base de datos de corredores del Maestro se encuentra vacía.")
