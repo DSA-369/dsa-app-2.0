@@ -177,14 +177,13 @@ st.markdown("""
 if "admin_auth" not in st.session_state:
     st.session_state.admin_auth = False
 
-# Lista de módulos que NO requieren contraseña para ser vistos
 modulos_publicos = ["📂 Historial de Válidas", "🌎 Ranking Nacional", "👥 Maestro de Corredores"]
 
 # Si elige un módulo restringido y no está logueado, lo bloqueamos
 if opcion_menu not in modulos_publicos and not st.session_state.admin_auth:
     st.markdown("<br>", unsafe_allow_html=True)
     st.warning("🔒 **Área Restringida: Acceso exclusivo para Jueces y Staff de la DSA**")
-    st.info("💡 El público puede navegar libremente por el 'Ranking Nacional' y el 'Historial de Válidas' en el menú izquierdo.")
+    st.info("💡 El público puede navegar libremente por el 'Ranking Nacional' el 'Historial de Válidas y Maestro de Corredores' en el menú izquierdo.")
     
     col_pwd, _ = st.columns([4, 6])
     with col_pwd:
