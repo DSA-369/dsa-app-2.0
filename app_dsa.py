@@ -14,93 +14,23 @@ except ImportError:
     BracketEngine = None
 
 # ==========================================
-# 1. CONFIGURACIÓN DE PÁGINA E IDENTIDAD VISUAL
+# 🎨 DISEÑO GLOBAL: EFECTO PULSO PARA EL MENÚ LATERAL
 # ==========================================
-st.set_page_config(
-    page_title="DSA 2.0 - Panel de Control",
-    page_icon="🏁",
-    layout="wide"
-)
-
-# Paleta de colores DSA (Fondo Negro, Acentos en Azul de Carrera y Naranja Enérgico)
 st.markdown("""
     <style>
-        /* Fondo Principal Oscuro / Negro */
-        .stApp {
-            background-color: #0c0f17;
-            color: #f1f5f9;
+    /* Ubica el botón de la flecha lateral de Streamlit */
+    button[data-testid="stSidebarCollapseButton"] {
+        background-color: #ff4b4b !important;
+        color: white !important;
+        border-radius: 50% !important;
+        box-shadow: 0 0 0 0 rgba(255, 75, 75, 0.7) !important;
+        animation: pulso_menu 1.8s infinite cubic-bezier(0.66, 0, 0, 1) !important;
+    }
+    @keyframes pulso_menu {
+        to {
+            box-shadow: 0 0 0 15px rgba(255, 75, 75, 0) !important;
         }
-
-        /* Fondo Principal Oscuro / Negro */
-        .stApp {
-            background-color: #0c0f17;
-            color: #f1f5f9;
-        }
-        
-        /* Modificar el menú lateral (Sidebar) */
-        section[data-testid="stSidebar"] {
-            background-color: #080a10 !important;
-            border-right: 2px solid #ff7a00; /* Borde naranja */
-        }
-        
-        /* Estilo para los títulos y subtítulos */
-        h1, h2, h3, h4, h5, h6, .stMarkdown {
-            color: #ffffff !important;
-            font-family: 'Segoe UI', sans-serif;
-        }
-        
-        /* Personalizar botones de acción (Naranja DSA) */
-        div.stButton > button {
-            background-color: #ff7a00 !important;
-            color: #ffffff !important;
-            border: none !important;
-            border-radius: 6px !important;
-            font-weight: bold !important;
-            padding: 0.6rem 2rem !important;
-            transition: all 0.3s ease;
-            width: 100%;
-        }
-        
-        div.stButton > button:hover {
-            background-color: #0052ff !important; /* Cambia a Azul en Hover */
-            box-shadow: 0 0 10px #0052ff;
-            transform: scale(1.02);
-        }
-
-        /* Estilo para cajas informativas */
-        .stAlert {
-            background-color: #111827 !important;
-            border-left: 5px solid #0052ff !important; /* Borde azul de proceso */
-            color: #f1f5f9 !important;
-        }
-        
-        /* Decoraciones de inputs */
-        input, select, textarea {
-            background-color: #1e293b !important;
-            color: white !important;
-            border: 1px solid #475569 !important;
-        }
-
-        /* Tarjeta de Corredor en Heat */
-        .rider-card {
-            background-color: #111827;
-            border: 2px solid #1e293b;
-            border-radius: 8px;
-            padding: 15px;
-            text-align: center;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-            transition: border-color 0.3s ease;
-        }
-        .rider-card:hover {
-            border-color: #ff7a00;
-        }
-        .podium-box {
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
-            margin-bottom: 20px;
-        }
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -466,25 +396,6 @@ def resolver_ruta_imagen(ruta_raw):
 # ==========================================
 if "👥 Maestro de Corredores" in opcion_menu:
     import datetime
-
-    # --- INYECCIÓN DE CSS INVISIBLE PARA RESALTAR EL MENÚ LATERAL ---
-    st.markdown("""
-        <style>
-        /* Selecciona el botón nativo del menú lateral de Streamlit y lo hace resaltar */
-        button[data-testid="stSidebarCollapseButton"] {
-            background-color: #ff4b4b !important;
-            color: white !important;
-            border-radius: 50% !important;
-            box-shadow: 0 0 0 0 rgba(255, 75, 75, 0.7);
-            animation: pulso_menu 1.8s infinite cubic-bezier(0.66, 0, 0, 1);
-        }
-        @keyframes pulso_menu {
-            to {
-                box-shadow: 0 0 0 15px rgba(255, 75, 75, 0);
-            }
-        }
-        </style>
-    """, unsafe_allow_html=True)
 
     # 1. Inicialización de interruptores de pantalla en la memoria de la App
     if "mostrar_registro_rider" not in st.session_state:
