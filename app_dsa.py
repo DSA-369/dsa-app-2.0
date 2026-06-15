@@ -779,9 +779,10 @@ if "👥 Maestro de Corredores" in opcion_menu:
 
             df_riders["Codigo_Texto"] = df_riders["id_rider"].apply(mapear_codigo_texto)
 
-            # Inyectamos el número de versión dinámico a la URL de la imagen para romper la caché
-            v_actual = st.session_state.version_fotos
-            df_riders["Foto_Con_Version"] = df_riders["foto_url"].apply(lambda url: f"{url}?v={v_actual}" if url else url)
+            # 🚀 TRUCO MAESTRO: Forzamos un token de tiempo real único por cada recarga de página
+            import time
+            token_anticahe = int(time.time())
+            df_riders["Foto_Con_Version"] = df_riders["foto_url"].apply(lambda url: f"{url}?t={token_anticahe}" if url else url)
 
             orden_categorias = ["Open Skate", "Femenino Skate", "Junior Skate", "Master Skate", "Open Inline", "Femenino Inline", "Junior Inline"]
             df_riders['categoria_base'] = df_riders['categoria_base'].fillna("Sin Categoría")
@@ -803,7 +804,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
             )
         else:
             st.info("La base de datos de corredores del Maestro se encuentra vacía.")
-                            
+                             
 # MODULO: INSCRIPCIÓN DE VÁLIDA
 # ==========================================
 elif "📝 Inscripción de Válida" in opcion_menu:
