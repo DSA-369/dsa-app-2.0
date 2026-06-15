@@ -505,13 +505,13 @@ if "👥 Maestro de Corredores" in opcion_menu:
             
             col1, col2 = st.columns(2)
             with col1:
-                nombre = st.text_input("Nombre Completo *", placeholder="Ej: RAFAEL CARDONA")
+                nombre = st.text_input("Nombre Completo *", placeholder="Ej: DIEGO PONCELET")
                 categoria_base = st.selectbox("Categoría Principal *", 
                                               ["Open Skate", "Femenino Skate", "Junior Skate", "Master Skate", 
                                                "Open Inline", "Femenino Inline", "Junior Inline", "Streetluge"])
                 
                 pais_input = st.text_input("Código de tu País (2 letras - Ej: VE, PA, CO, ES) *", max_chars=2, placeholder="VE").strip().upper()
-                ciudad_input = st.text_input("Ciudad o Estado que representas *", placeholder="Ej: CHIRIKÍ o CARACAS")
+                ciudad_input = st.text_input("Ciudad o Estado que representas *", placeholder="Ej: BARCELONA o CARACAS")
                 
                 fecha_nacimiento = st.date_input(
                     "Fecha de Nacimiento",
@@ -524,7 +524,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
                 correo = st.text_input("Correo Electrónico *")
                 telefono = st.text_input("Teléfono de Contacto", placeholder="+58...")
                 telefono_emergencia = st.text_input("Teléfono de Emergencia")
-                instagram = st.text_input("Usuario de Instagram", placeholder="Ej: jjuandh (sin el @)")
+                instagram = st.text_input("Usuario de Instagram", placeholder="Ej: tu_usuario (sin el @)")
                 
             st.markdown("---")
             st.write("📸 **Foto de Perfil Oficial**")
@@ -650,7 +650,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
             )
         else:
             st.info("La base de datos de corredores del Maestro se encuentra vacía.")
-            
+
 # MODULO: INSCRIPCIÓN DE VÁLIDA
 # ==========================================
 elif "📝 Inscripción de Válida" in opcion_menu:
