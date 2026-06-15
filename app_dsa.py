@@ -462,17 +462,17 @@ def resolver_ruta_imagen(ruta_raw):
     # Si no encontró nada, devolvemos None
     return None
 # ==========================================
-# MODULO: MAESTRO DE CORREDORES (VERSIÓN GLOBAL)
+# MODULO: MAESTRO DE CORREDORES (VERSIÓN GLOBAL E ICONIZADA)
 # ==========================================
 if "👥 Maestro de Corredores" in opcion_menu:
-    import datetime  # Nos asegura el manejo libre de fechas
+    import datetime  
     
     # Interruptor de pantalla para alternar entre Tabla y Registro público
     if "mostrar_registro_rider" not in st.session_state:
         st.session_state.mostrar_registro_rider = False
 
     # =======================================================
-    # PANTALLA A: FORMULARIO DE INSCRIPCIÓN (INTERNACIONAL)
+    # PANTALLA A: FORMULARIO DE INSCRIPCIÓN (FORMATO RIDXXX)
     # =======================================================
     if st.session_state.mostrar_registro_rider:
         st.markdown("### 📝 Inscripción Oficial de Corredor")
@@ -481,20 +481,29 @@ if "👥 Maestro de Corredores" in opcion_menu:
             st.session_state.mostrar_registro_rider = False
             st.rerun()
             
+        # Lógica inteligente para calcular el próximo código único sin repetir
         def obtener_proximo_id():
             try:
                 res = supabase.table("riders_master").select("id_rider").execute()
-                ids_actuales = [int(r['id_rider']) for r in res.data if str(r['id_rider']).isdigit()]
+                ids_actuales = []
+                for r in res.data:
+                    val = str(r.get('id_rider', ''))
+                    # Extraemos solo los números por si acaso hay mezcla de formatos
+                    digitos = ''.join(c for c in val if c.isdigit())
+                    if digitos:
+                        ids_actuales.append(int(digitos))
                 return max(ids_actuales) + 1 if ids_actuales else 1
             except:
                 return 1
                 
         proximo_id = obtener_proximo_id()
+        # ✨ SOLUCIÓN CÓDIGO: Forzamos el formato RID001, RID010, RID100
         id_formateado = f"RID{proximo_id:03d}"
         url_foto_generada = f"https://gaxnteisqvvkjavhtmgm.supabase.co/storage/v1/object/public/riders-photos/{id_formateado}.jpeg"
 
         with st.form("form_nuevo_rider"):
-            st.info(f"Tu Código de Corredor asignado será el: **{proximo_id}**")
+            st.markdown(f"### 🆔 Código DSA Asignado: `{id_formateado}`")
+            st.caption(f"Tu archivo de foto en el servidor se guardará vinculada a tu serial: `{id_formateado}.jpeg`")
             
             col1, col2 = st.columns(2)
             with col1:
@@ -503,23 +512,21 @@ if "👥 Maestro de Corredores" in opcion_menu:
                                               ["Open Skate", "Femenino Skate", "Junior Skate", "Master Skate", 
                                                "Open Inline", "Femenino Inline", "Junior Inline", "Streetluge"])
                 
-                # REQUERIMIENTO 1: Entrada libre del código de país de 2 letras
-                pais_input = st.text_input("Código de tu País (2 letras - Ej: VE, PA, CO, ES, US) *", max_chars=2, placeholder="VE").strip().upper()
-                ciudad_input = st.text_input("Ciudad o Estado que representas *", placeholder="Ej: CARACAS o MADRID")
+                pais_input = st.text_input("Código de tu País (2 letras - Ej: VE, PA, CO, ES) *", max_chars=2, placeholder="VE").strip().upper()
+                ciudad_input = st.text_input("Ciudad o Estado que representas *", placeholder="Ej: CHIRIKÍ o CARACAS")
                 
-                # REQUERIMIENTO 2: Rango de fecha libre abriendo un mínimo de 100 años (Desde 1926)
                 fecha_nacimiento = st.date_input(
                     "Fecha de Nacimiento",
-                    value=datetime.date(2000, 1, 1),  # Fecha por defecto sugerida
-                    min_value=datetime.date(1926, 1, 1),  # Mínimo 100 años atrás
-                    max_value=datetime.date.today()  # Máximo el día de hoy
+                    value=datetime.date(2000, 1, 1),  
+                    min_value=datetime.date(1926, 1, 1),  # Rango libre de 100 años
+                    max_value=datetime.date.today()  
                 )
                 
             with col2:
                 correo = st.text_input("Correo Electrónico *")
                 telefono = st.text_input("Teléfono de Contacto", placeholder="+58...")
                 telefono_emergencia = st.text_input("Teléfono de Emergencia")
-                instagram = st.text_input("Usuario de Instagram", placeholder="Ej: Tu_usuario (sin el @)")
+                instagram = st.text_input("Usuario de Instagram", placeholder="Ej: jjuandh (sin el @)")
                 
             st.markdown("---")
             st.write("📸 **Foto de Perfil Oficial**")
@@ -529,9 +536,8 @@ if "👥 Maestro de Corredores" in opcion_menu:
 
             if submit:
                 if not nombre.strip() or not correo.strip() or not ciudad_input.strip() or len(pais_input) < 2:
-                    st.error("⚠️ Los campos marcados con (*) son obligatorios. Asegúrate de ingresar las 2 letras de tu país.")
+                    st.error("⚠️ Los campos marcados con (*) son obligatorios y el país requiere sus 2 letras.")
                 else:
-                    # Guardamos la combinación limpia: PA | CHIRIKÍ
                     estado_pais_combinado = f"{pais_input} | {ciudad_input.strip().upper()}"
                     
                     insta_limpio = instagram.strip().replace("@", "")
@@ -548,6 +554,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
                         except Exception as e:
                             st.warning(f"Aviso de imagen: {e}")
 
+                    # Guardamos el número limpio en la BD para no romper integridades
                     nuevo_registro = {
                         "id_rider": proximo_id,
                         "nombre": nombre.strip().upper(),
@@ -564,7 +571,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
                     
                     try:
                         supabase.table("riders_master").insert(nuevo_registro).execute()
-                        st.success("🎉 ¡Inscripción procesada con éxito! Bienvenido a la DSA Global.")
+                        st.success(f"🎉 ¡Inscripción procesada! Bienvenido a la DSA con el código {id_formateado}.")
                         time.sleep(2)
                         st.session_state.mostrar_registro_rider = False
                         st.rerun()
@@ -572,7 +579,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
                         st.error(f"Error al guardar: {e}")
 
     # =======================================================
-    # PANTALLA B: TABLA PRINCIPAL DINÁMICA E INTERNACIONAL
+    # PANTALLA B: TABLA PRINCIPAL CON ICONOS REDUCIDOS
     # =======================================================
     else:
         col_t, col_b = st.columns([3, 1])
@@ -581,15 +588,16 @@ if "👥 Maestro de Corredores" in opcion_menu:
             st.write("Historial y base de datos de atletas registrados oficialmente en el sistema.")
         with col_b:
             st.write("<br>", unsafe_allow_html=True)
-            if st.button("➕ REGÍSTRATE COMO CORREDOR", use_container_width=True):
+            if st.button("➕ REGÍSTRATE CORREDOR", use_container_width=True):
                 st.session_state.mostrar_registro_rider = True
                 st.rerun()
 
+        # Extraer la tabla
         riders_lista = obtener_riders_desde_db()
         if riders_lista:
             df_riders = pd.DataFrame(riders_lista)
             
-            # --- 1. BLINDAJE ANTIBALAS ---
+            # --- BLINDAJE ---
             cols_necesarias = ["foto_url", "id_rider", "nombre", "estado_pais", "categoria_base", "instagram", "total_eventos"]
             for col in cols_necesarias:
                 if col not in df_riders.columns:
@@ -597,42 +605,46 @@ if "👥 Maestro de Corredores" in opcion_menu:
 
             df_riders["total_eventos"] = pd.to_numeric(df_riders["total_eventos"], errors='coerce').fillna(0)
             
-            # --- 2. LOGÍSTICA DE UBICACIÓN COMPATIBLE CON PC Y MÓVIL ---
+            # --- FUNCIÓN CORREGIDA (Sin advertencias del linter) ---
             def obtener_url_bandera(texto):
-                if not texto or "|" not in str(texto):
-                    return "https://flagcdn.com/w40/un.png" # Bandera de las Naciones Unidas por defecto
-                pais_codigo = str(texto).split("|")[0].strip().lower()
-                # Retorna el enlace directo a la imagen oficial de la bandera en alta definición
-                return f"https://flagcdn.com/w40/{pais_codigo}.png"
+                text_str = str(texto or '').strip()
+                if not text_str:
+                    return "https://flagcdn.com/w20/un.png"
+                
+                pais_codigo = text_str.split("|")[0].strip().lower()
+                return f"https://flagcdn.com/w20/{pais_codigo}.png"
 
             def obtener_estado_puro(texto):
-                if not texto:
-                    return "N/A"
-                if "|" in str(texto):
-                    return str(texto).split("|")[1].strip().upper()
-                return str(texto).strip().upper()
+                if not texto: return "N/A"
+                return str(texto).split("|")[1].strip().upper() if "|" in str(texto) else str(texto).strip().upper()
 
-            # Creamos las dos columnas procesadas
             df_riders["Bandera_URL"] = df_riders["estado_pais"].apply(obtener_url_bandera)
             df_riders["Estado_Limpio"] = df_riders["estado_pais"].apply(obtener_estado_puro)
 
-            # --- 3. ORDENACIÓN POR CATEGORÍAS ---
+            # --- FORMATO SERIAL RIDXXX EN LA TABLA ---
+            def mapear_codigo_texto(val):
+                try:
+                    return f"RID{int(val):03d}"
+                except:
+                    return str(val)
+            df_riders["Codigo_Texto"] = df_riders["id_rider"].apply(mapear_codigo_texto)
+
+            # --- ORDENACIÓN ---
             orden_categorias = ["Open Skate", "Femenino Skate", "Junior Skate", "Master Skate", "Open Inline", "Femenino Inline", "Junior Inline"]
             df_riders['categoria_base'] = df_riders['categoria_base'].fillna("Sin Categoría")
             df_riders['categoria_cat'] = pd.Categorical(df_riders['categoria_base'], categories=orden_categorias, ordered=True)
             df_riders = df_riders.sort_values(['categoria_cat', 'nombre'])
             
-            # --- 4. SELECCIÓN DE VISTA FINAL (Separamos Bandera y Estado) ---
-            df_vista = df_riders[["foto_url", "id_rider", "nombre", "Bandera_URL", "Estado_Limpio", "categoria_base", "instagram", "total_eventos"]].copy()
+            # --- SELECCIÓN DE VISTA ---
+            df_vista = df_riders[["foto_url", "Codigo_Texto", "nombre", "Bandera_URL", "Estado_Limpio", "categoria_base", "instagram", "total_eventos"]].copy()
             df_vista.columns = ["Foto", "Código", "Nombre", "País", "Estado", "Categoría", "Instagram", "Eventos"]
             
-            # --- 5. RENDERIZADO DEL DATAFRAME PRO ---
+            # --- RENDERIZADO CON CONFIGURACIÓN DE COLUMNAS ESTRECHAS ---
             st.dataframe(
                 df_vista.set_index("Código"),
                 column_config={
-                    "Foto": st.column_config.ImageColumn("Avatar"),
-                    # Renderizamos la bandera como una imagen real redonda en vez de texto emoji
-                    "País": st.column_config.ImageColumn("País", help="Bandera oficial del país"),
+                    "Foto": st.column_config.ImageColumn("Avatar", width="small"),
+                    "País": st.column_config.ImageColumn("País", width="small", help="Bandera de origen"),
                     "Instagram": st.column_config.LinkColumn("Instagram", display_text="📸 Ver Perfil"),
                     "Eventos": st.column_config.NumberColumn("Eventos", format="%d")
                 },
@@ -640,7 +652,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
             )
         else:
             st.info("La base de datos de corredores del Maestro se encuentra vacía.")
-
+            
 # MODULO: INSCRIPCIÓN DE VÁLIDA
 # ==========================================
 elif "📝 Inscripción de Válida" in opcion_menu:
