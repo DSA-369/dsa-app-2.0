@@ -96,14 +96,27 @@ st.markdown("""
             margin-bottom: 20px;
         }
 
-        /* 🚀 EFECTO PULSO PARA EL MENÚ LATERAL GLOBAL (COMPATIBLE CON PC Y MÓVIL) */
-        button[data-testid="stSidebarCollapseButton"] {
+        /* 🚀 MULTI-SELECTOR BLINDADO: Captura el botón abierto, cerrado, en PC o Móvil 🚀 */
+        button[data-testid="stSidebarCollapseButton"],
+        div[data-testid="collapsedControl"] button,
+        .stSidebarCollapseButton {
             background-color: #ff7a00 !important; /* Naranja DSA */
             color: #ffffff !important;
             border-radius: 50% !important;
             box-shadow: 0 0 0 0 rgba(255, 122, 0, 0.7) !important;
             animation: pulso_menu 1.8s infinite cubic-bezier(0.66, 0, 0, 1) !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
         }
+
+        /* Forzamos a que las flechas internas (los vectores SVG) se vuelvan blancas */
+        button[data-testid="stSidebarCollapseButton"] svg,
+        div[data-testid="collapsedControl"] button svg {
+            fill: #ffffff !important;
+            color: #ffffff !important;
+        }
+
         @keyframes pulso_menu {
             to {
                 box-shadow: 0 0 0 15px rgba(255, 122, 0, 0) !important;
