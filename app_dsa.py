@@ -593,19 +593,30 @@ if "👥 Maestro de Corredores" in opcion_menu:
             df_riders = df_riders.sort_values(['categoria_base', 'nombre'])
             
             # --- 2. ASEGURAR COLUMNAS ---
-            # Lista de las columnas que nuestra tabla necesita para funcionar
-            columnas_requeridas = ["foto_url", "id_rider", "nombre", "estado_pais", "categoria_base", "total_eventos"]
-            
-            # Revisamos una por una. Si no existe en la base de datos actual, la creamos para que no colapse
-            for col in columnas_requeridas:
-                if col not in df_riders.columns:
-                    if col == "total_eventos":
-                        df_riders[col] = 0
-                    else:
-                        df_riders[col] = None
-                        
-            # Ahora sí, seleccionamos las columnas con total seguridad
+            # Si "total_eventos" aún no existe en Supabase, lo creamos virtualmente para que no de error
+            if "total_eventos" not in df_riders.columns:
+                df_riders["total_eventos"] = 0
+                
+            # Seleccionamos y ordenamos las columnas para mostrarlas
             df_vista = df_riders[["foto_url", "id_rider", "nombre", "estado_pais", "categoria_base", "total_eventos"]].copy()
+            df_vista.columns = ["Foto", "Código", "Nombre", "Estado / País", "Categoría", "Eventos"]
+            
+            # --- 3. DIBUJAR LA TABLA CON FOTOS REDONDAS ---
+            # st.column_config nos permite transformar URLs de texto en imágenes redondas/iconos
+            st.dataframe(
+                df_vista.set_index("Código"),
+                column_config={
+                    "Foto": st.column_config.ImageColumn(
+                        "Avatar", help="Foto oficial del corredor"
+                    ),
+                    "Eventos": st.column_config.NumberColumn(
+                        "Eventos", format="%d", help="Cantidad de válidas corridas"
+                    )
+                },
+                use_container_width=True
+            )
+        else:
+            st.info("La base de datos de corredores del Maestro se encuentra vacía.")
 
 # ==========================================
 # MODULO: INSCRIPCIÓN DE VÁLIDA
