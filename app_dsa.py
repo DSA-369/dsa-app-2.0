@@ -603,7 +603,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
         else:
             st.info("La base de datos de corredores está vacía.")
 # ==========================================
-# MODULO: INSCRIPCIÓN DE VÁLIDA
+# MODULO: INSCRIPCIÓN DE VÁLIDA (VERSIÓN BLINDADA)
 # ==========================================
 elif "📝 Inscripción de Válida" in opcion_menu:
     st.subheader("📝 Inscripción y Entrega de Dorsales")
@@ -612,135 +612,114 @@ elif "📝 Inscripción de Válida" in opcion_menu:
     riders_lista = obtener_riders_desde_db()
     inscritos_lista = obtener_inscritos_desde_db()
     
-    if not riders_lista:
-        st.warning("⚠️ No se encontraron corredores en la tabla 'riders_master'. Primero debes registrar atletas en la base de datos.")
-    else:
-        opciones_select = [f"{r['id_rider']} | {r['nombre']}" for r in riders_lista]
+    # Listas globales para reutilizar
+    LISTA_CATEGORIAS = ["Open Skate", "Junior Skate", "Femenino Skate", "Master Skate", 
+                        "Open Inline", "Junior Inline", "Femenino Inline", "Master Inline", "Open Streetluge"]
+    LISTA_ESTADOS = ["Inscrito", "Verificado", "Retirado"]
 
-        # Fila superior: Formulario y Planilla actual
+    if not riders_lista:
+        st.warning("⚠️ No se encontraron corredores en la tabla 'riders_master'.")
+    else:
+        opciones_select = [f"{r.get('id_rider', '0')} | {r.get('nombre', 'Desconocido')}" for r in riders_lista]
+
         col1, col2 = st.columns([4, 6])
 
+        # --- SECCIÓN: FORMULARIO ---
         with col1:
             st.markdown("### 🎫 Formulario de Registro")
             with st.form("registro_pista"):
                 rider_elegido = st.selectbox("Seleccionar Atleta:", opciones_select)
                 dorsal_input = st.text_input("🔢 Número de Dorsal asignado:", placeholder="Ej: 24").strip()
-                
-                categoria_carrera = st.selectbox(
-                    "⚡ Categoría de Competición:",
-                    ["Open Skate", "Junior Skate", "Femenino Skate", "Master Skate", "Open Inline", "Junior Inline", "Femenino Inline", "Master Inline", "Open Streetluge"]
-                )
-                
+                categoria_carrera = st.selectbox("⚡ Categoría de Competición:", LISTA_CATEGORIAS)
                 disclaimer = st.checkbox("✍️ Disclaimer Físico Firmado", value=False)
-                estado_reg = st.selectbox("🚦 Estatus Inicial:", ["Inscrito", "Verificado", "Retirado"])
+                estado_reg = st.selectbox("🚦 Estatus Inicial:", LISTA_ESTADOS)
 
                 guardar = st.form_submit_button("💾 Guardar en Base de Datos")
 
                 if guardar:
                     if not dorsal_input:
-                        st.error("❌ El número de dorsal es estrictamente obligatorio para pista.")
+                        st.error("❌ El dorsal es obligatorio.")
                     else:
                         id_rider_clean = rider_elegido.split(" | ")[0].strip()
-                        datos_inscripcion = {
-                            "dorsal": dorsal_input,
-                            "id_rider": id_rider_clean,
-                            "categoria_evento": categoria_carrera,
-                            "firma_disclaimer": disclaimer,
-                            "estado_registro": estado_reg
-                        }
-                        
                         try:
-                            supabase.table("inscritos_valida").insert(datos_inscripcion).execute()
-                            st.success(f"🎉 ¡Dorsal {dorsal_input} asignado con éxito!")
+                            supabase.table("inscritos_valida").insert({
+                                "dorsal": dorsal_input,
+                                "id_rider": id_rider_clean,
+                                "categoria_evento": categoria_carrera,
+                                "firma_disclaimer": disclaimer,
+                                "estado_registro": estado_reg
+                            }).execute()
+                            st.success(f"🎉 ¡Dorsal {dorsal_input} asignado!")
                             st.rerun()
                         except Exception as ex:
-                            err_msg = str(ex)
-                            if "already exists" in err_msg or "violates unique constraint" in err_msg:
-                                st.error(f"⚠️ Error: El Dorsal '{dorsal_input}' ya está asignado a otro corredor.")
-                            else:
-                                st.error(f"❌ Error al guardar: {err_msg}")
+                            st.error(f"❌ Error: {str(ex)}")
 
+        # --- SECCIÓN: TABLA ---
         with col2:
             st.markdown("### 📋 Planilla de Control de Pista")
             if not inscritos_lista:
-                st.info("ℹ️ No hay corredores registrados en pista para esta carrera aún.")
+                st.info("ℹ️ No hay corredores en pista.")
             else:
                 tabla_datos = []
                 for ins in inscritos_lista:
-                    nombre_rider = ins.get('riders_master', {}).get('nombre', 'Desconocido') if ins.get('riders_master') else 'Desconocido'
+                    # Acceso seguro a datos anidados
+                    rider_data = ins.get('riders_master', {})
+                    nombre_rider = rider_data.get('nombre', 'Desconocido') if isinstance(rider_data, dict) else 'Desconocido'
+                    
                     tabla_datos.append({
-                        "Dorsal": ins['dorsal'],
-                        "ID Rider": ins['id_rider'],
+                        "Dorsal": ins.get('dorsal', 'N/A'),
+                        "ID Rider": ins.get('id_rider', 'N/A'),
                         "Nombre": nombre_rider,
-                        "Categoría": ins['categoria_evento'],
-                        "Disclaimer": "✅ Firmado" if ins['firma_disclaimer'] else "⏳ Pendiente",
-                        "Estatus": ins['estado_registro']
+                        "Categoría": ins.get('categoria_evento', 'N/A'),
+                        "Disclaimer": "✅ Firmado" if ins.get('firma_disclaimer') else "⏳ Pendiente",
+                        "Estatus": ins.get('estado_registro', 'Inscrito')
                     })
                 
                 df_inscritos = pd.DataFrame(tabla_datos)
                 st.dataframe(df_inscritos.set_index("Dorsal"), use_container_width=True)
 
-        # Fila inferior: Modificación y Baja Operativa (Solo si hay inscritos)
+        # --- SECCIÓN: GESTIÓN (Solo si hay datos) ---
         if inscritos_lista:
             st.markdown("---")
-            st.markdown("### ⚙️ Panel de Modificación y Baja Operativa")
-            st.write("Selecciona un dorsal activo en la carrera para editar su información o darlo de baja.")
+            st.markdown("### ⚙️ Panel de Modificación y Baja")
             
-            dorsales_activos = [ins['dorsal'] for ins in inscritos_lista]
+            dorsales_activos = [ins.get('dorsal', 'N/A') for ins in inscritos_lista]
+            dorsal_a_gestionar = st.selectbox("🎯 Seleccionar Dorsal a Gestionar:", dorsales_activos)
             
-            col_sel, col_edit, col_del = st.columns([3, 5, 4])
-            
-            with col_sel:
-                dorsal_a_gestionar = st.selectbox("🎯 Seleccionar Dorsal a Gestionar:", dorsales_activos)
-                datos_actuales = next((ins for ins in inscritos_lista if ins['dorsal'] == dorsal_a_gestionar), None)
+            datos_actuales = next((ins for ins in inscritos_lista if ins.get('dorsal') == dorsal_a_gestionar), None)
             
             if datos_actuales:
-                nombre_actual = datos_actuales.get('riders_master', {}).get('nombre', 'Desconocido') if datos_actuales.get('riders_master') else 'Desconocido'
+                c1, c2, c3 = st.columns([3, 5, 4])
                 
-                with col_edit:
-                    st.markdown(f"**✏️ Editar Datos de: {nombre_actual} (Dorsal {dorsal_a_gestionar})**")
-                    nueva_categoria = st.selectbox(
-                        "Cambiar Categoría de Evento:",
-                        ["Open Skate", "Junior Skate", "Femenino Skate", "Master Skate", "Open Inline", "Junior Inline", "Femenino Inline", "Master Inline", "Open Streetluge"],
-                        index=["Open Skate", "Junior Skate", "Femenino Skate", "Master Skate", "Open Inline", "Junior Inline", "Femenino Inline", "Master Inline", "Open Streetluge"].index(datos_actuales['categoria_evento'])
-                    )
-                    nuevo_estatus = st.selectbox(
-                        "Cambiar Estatus de Registro:",
-                        ["Inscrito", "Verificado", "Retirado"],
-                        index=["Inscrito", "Verificado", "Retirado"].index(datos_actuales['estado_registro'])
-                    )
-                    nuevo_disclaimer = st.checkbox("Disclaimer Físico Actualizado", value=datos_actuales['firma_disclaimer'], key="edit_disc_valida")
+                # Función segura para encontrar el índice de selección
+                def get_idx(lista, valor):
+                    return lista.index(valor) if valor in lista else 0
+
+                with c2:
+                    st.markdown(f"**✏️ Editar Datos**")
+                    nueva_cat = st.selectbox("Categoría:", LISTA_CATEGORIAS, index=get_idx(LISTA_CATEGORIAS, datos_actuales.get('categoria_evento')))
+                    nuevo_est = st.selectbox("Estatus:", LISTA_ESTADOS, index=get_idx(LISTA_ESTADOS, datos_actuales.get('estado_registro')))
+                    nuevo_disc = st.checkbox("Disclaimer Firmado", value=datos_actuales.get('firma_disclaimer', False))
                     
-                    if st.button("🆙 Actualizar Datos del Rider"):
+                    if st.button("🆙 Actualizar Datos"):
                         try:
                             supabase.table("inscritos_valida").update({
-                                "categoria_evento": nueva_categoria,
-                                "estado_registro": nuevo_estatus,
-                                "firma_disclaimer": nuevo_disclaimer
+                                "categoria_evento": nueva_cat,
+                                "estado_registro": nuevo_est,
+                                "firma_disclaimer": nuevo_disc
                             }).eq("dorsal", dorsal_a_gestionar).execute()
-                            
-                            st.success(f"✅ Dorsal {dorsal_a_gestionar} updated successfully.")
                             st.rerun()
                         except Exception as e:
-                            st.error(f"Error al actualizar: {e}")
+                            st.error(f"Error: {e}")
                 
-                with col_del:
-                    st.markdown("**🚨 Zona de Peligro (Bajas)**")
-                    st.write("Si un atleta decide no participar, puedes removerlo permanentemente.")
-                    st.warning(f"Eliminará al Dorsal {dorsal_a_gestionar} de la carrera actual.")
-                    
-                    confirmar_borrado = st.checkbox(f"Confirmo la baja del Dorsal {dorsal_a_gestionar}", value=False)
-                    if st.button("🗑️ Eliminar Corredor de la Válida"):
-                        if confirmar_borrado:
-                            try:
-                                supabase.table("inscritos_valida").delete().eq("dorsal", dorsal_a_gestionar).execute()
-                                st.success(f"💥 El Dorsal {dorsal_a_gestionar} fue eliminado.")
-                                st.rerun()
-                            except Exception as e:
-                                st.error(f"Error al eliminar: {e}")
-                        else:
-                            st.error("⚠️ Debes confirmar la casilla de seguridad antes de eliminar.")
-
+                with c3:
+                    st.markdown("**🚨 Baja**")
+                    if st.button("🗑️ Eliminar Corredor"):
+                        try:
+                            supabase.table("inscritos_valida").delete().eq("dorsal", dorsal_a_gestionar).execute()
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Error: {e}")
 # ==========================================
 # MODULO: ⏱️ CRONOMETRAJE EN PISTA
 # ==========================================
