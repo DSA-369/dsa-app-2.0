@@ -470,11 +470,11 @@ def resolver_ruta_imagen(ruta_raw):
     # Si no encontró nada, devolvemos None
     return None
 # ==========================================
-# MODULO: MAESTRO DE CORREDORES + AUTENTICACIÓN PRO
+# MODULO: MAESTRO DE CORREDORES + AUTENTICACIÓN PRO (CORREGIDO)
 # ==========================================
 if "👥 Maestro de Corredores" in opcion_menu:
     import datetime
-    
+
     # 1. Inicialización de interruptores de pantalla en la memoria de la App
     if "mostrar_registro_rider" not in st.session_state:
         st.session_state.mostrar_registro_rider = False
@@ -521,7 +521,6 @@ if "👥 Maestro de Corredores" in opcion_menu:
                 
             with col2:
                 correo = st.text_input("Correo Electrónico *").strip()
-                # 🔐 NUEVO CAMPO: Contraseña para el usuario
                 password_input = st.text_input("Crea una Contraseña para tu Perfil *", type="password").strip()
                 telefono = st.text_input("Teléfono de Contacto").strip()
                 telefono_emergencia = st.text_input("Teléfono de Emergencia").strip()
@@ -551,7 +550,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
                         "estado_pais": estado_pais_combinado,
                         "fecha_nacimiento": str(fecha_nacimiento),
                         "correo": correo,
-                        "password": password_input, # Guardamos la clave en formato texto libre
+                        "password": password_input,
                         "telefono": telefono,
                         "telefono_emergencia": telefono_emergencia,
                         "instagram": insta_limpio if insta_limpio else None,
@@ -617,7 +616,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
                         except Exception as e:
                             st.error(f"Error de conexión con el servidor: {e}")
 
-        # CASO C2: USUARIO EN LÍNEA (MOSTRAR PANEL DE EDICIÓN DE DATOS CORREGIDO)
+        # CASO C2: USUARIO EN LÍNEA (EDICIÓN TOTALMENTE BLINDADA CONTRA NULOS)
         else:
             rider = st.session_state.rider_autenticado
             st.markdown(f"#### 🛠️ Editando el Perfil de: **{rider.get('id_rider')}**")
@@ -626,41 +625,37 @@ if "👥 Maestro de Corredores" in opcion_menu:
                 st.session_state.rider_autenticado = None
                 st.rerun()
 
-            # Desglosamos la ubicación de manera segura
-            ubicacion_actual = str(rider.get('estado_pais', 'VE | CARACAS'))
+            ubicacion_actual = str(rider.get('estado_pais') or 'VE | CARACAS')
             p_inicial = ubicacion_actual.split("|")[0].strip() if "|" in ubicacion_actual else "VE"
             e_inicial = ubicacion_actual.split("|")[1].strip() if "|" in ubicacion_actual else ubicacion_actual
 
-            try: f_inicial = datetime.datetime.strptime(rider.get('fecha_nacimiento', '2000-01-01'), '%Y-%m-%d').date()
+            try: f_inicial = datetime.datetime.strptime(str(rider.get('fecha_nacimiento') or '2000-01-01'), '%Y-%m-%d').date()
             except: f_inicial = datetime.date(2000, 1, 1)
 
-            # Lista oficial de categorías
             LISTA_CATEGORIAS_EDICION = ["Open Skate", "Femenino Skate", "Junior Skate", "Master Skate", "Open Inline", "Femenino Inline", "Junior Inline", "Streetluge"]
 
-            # 🚀 SOLUCIÓN AL VALUEERROR: Buscador seguro de índice
-            cat_guardada = str(rider.get('categoria_base', '')).strip()
+            cat_guardada = str(rider.get('categoria_base') or '').strip()
             if cat_guardada in LISTA_CATEGORIAS_EDICION:
                 idx_cat = LISTA_CATEGORIAS_EDICION.index(cat_guardada)
             else:
-                idx_cat = 0  # Si hay un espacio o texto raro, cae en la primera por defecto sin romper la app
+                idx_cat = 0  
 
             with st.form("form_editar_rider"):
                 col_e1, col_e2 = st.columns(2)
                 with col_e1:
-                    edit_nombre = st.text_input("Nombre Completo *", value=rider.get('nombre', '')).strip().upper()
+                    edit_nombre = st.text_input("Nombre Completo *", value=str(rider.get('nombre') or '')).strip().upper()
                     edit_categoria = st.selectbox("Categoría de Competición *", LISTA_CATEGORIAS_EDICION, index=idx_cat)
-                    edit_pais = st.text_input("Código de tu País (2 letras) *", value=p_inicial, max_chars=2).strip().upper()
-                    edit_ciudad = st.text_input("Ciudad / Estado *", value=e_inicial).strip().upper()
+                    edit_pais = st.text_input("Código de tu País (2 letras) *", value=str(p_inicial), max_chars=2).strip().upper()
+                    edit_ciudad = st.text_input("Ciudad / Estado *", value=str(e_inicial)).strip().upper()
                     edit_fecha = st.date_input("Fecha de Nacimiento", value=f_inicial, min_value=datetime.date(1926, 1, 1))
                 
-                # 🚀 SOLUCIÓN AL FORM ERROR: Corregido de col2 a col_e2
-                with col_e2:
-                    edit_correo = st.text_input("Correo Electrónico *", value=rider.get('correo', '')).strip()
-                    edit_pass = st.text_input("Cambiar Contraseña *", value=rider.get('password', ''), type="password").strip()
-                    edit_tel = st.text_input("Teléfono de Contacto", value=rider.get('telefono', '')).strip()
-                    edit_tel_em = st.text_input("Teléfono de Emergencia", value=rider.get('telefono_emergencia', '')).strip()
+                with col_e2: # <-- CORREGIDO: Uso estricto de la columna de edición interna
+                    edit_correo = st.text_input("Correo Electrónico *", value=str(rider.get('correo') or '')).strip()
+                    edit_pass = st.text_input("Cambiar Contraseña *", value=str(rider.get('password') or ''), type="password").strip()
+                    edit_tel = st.text_input("Teléfono de Contacto", value=str(rider.get('telefono') or '')).strip()
+                    edit_tel_em = st.text_input("Teléfono de Emergencia", value=str(rider.get('telefono_emergencia') or '')).strip()
                     
-                    insta_url_vieja = str(rider.get('instagram', ''))
+                    insta_url_vieja = str(rider.get('instagram') or '')
                     if "instagram.com/" in insta_url_vieja:
                         insta_user_viejo = insta_url_vieja.split("instagram.com/")[-1].replace("/", "").strip()
                     else:
@@ -671,7 +666,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
                 st.write("📸 **Actualizar Foto de Perfil** (Dejar vacío si deseas conservar tu foto actual)")
                 nueva_foto = st.file_uploader("Subir nueva imagen cuadrada (JPG / PNG)", type=['jpg', 'jpeg', 'png'], key="update_photo_loader")
 
-                # El botón ahora está perfectamente contenido e indentado dentro del formulario
+                # El botón de confirmación ahora se ejecutará siempre de forma limpia
                 submit_edicion = st.form_submit_button("💾 Guardar y Actualizar mis Datos")
 
                 if submit_edicion:
@@ -719,12 +714,11 @@ if "👥 Maestro de Corredores" in opcion_menu:
             st.write("Historial y base de datos de atletas registrados oficialmente en el sistema.")
         with col_b1:
             st.write("<br>", unsafe_allow_html=True)
-            if st.button("➕ REGÍSTRATE AQUÍ", use_container_width=True):
+            if st.button("➕ REGÍSTRATE CORREDOR", use_container_width=True):
                 st.session_state.mostrar_registro_rider = True
                 st.rerun()
         with col_b2:
             st.write("<br>", unsafe_allow_html=True)
-            # 🚀 NUEVO BOTÓN INTEGRADO AL LADO DEL REGISTRO
             if st.button("👤 Mi Perfil DSA", use_container_width=True):
                 st.session_state.mostrar_perfil_rider = True
                 st.rerun()
@@ -781,7 +775,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
             )
         else:
             st.info("La base de datos de corredores del Maestro se encuentra vacía.")
-
+            
 # MODULO: INSCRIPCIÓN DE VÁLIDA
 # ==========================================
 elif "📝 Inscripción de Válida" in opcion_menu:
