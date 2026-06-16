@@ -21,7 +21,7 @@ st.set_page_config(
     page_icon="🏁",
     layout="wide"
 )
-st.info("ℹ️ **Guía de Navegación:** Despliega el menú lateral izquierdo (pulsando la flecha superior) para cambiar de módulo.")
+
 # Paleta de colores DSA (Fondo Negro, Acentos en Azul de Carrera, Naranja Enérgico y Menú Animado)
 st.markdown("""
     <style>
