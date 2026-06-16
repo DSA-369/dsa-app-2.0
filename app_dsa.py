@@ -96,28 +96,32 @@ st.markdown("""
             margin-bottom: 20px;
         }
 
-        /* 🚀 MULTI-SELECTOR BLINDADO: Captura el botón abierto, cerrado, en PC o Móvil 🚀 */
+        /* 🚀 SELECTORES DE ACCESIBILIDAD UNIVERSALES PARA LAS FLECHAS 🚀 */
+        button[aria-label="Collapse sidebar"],
+        button[aria-label="Expand sidebar"],
         button[data-testid="stSidebarCollapseButton"],
-        div[data-testid="collapsedControl"] button,
-        .stSidebarCollapseButton {
+        div[data-testid="collapsedControl"] button {
             background-color: #ff7a00 !important; /* Naranja DSA */
             color: #ffffff !important;
             border-radius: 50% !important;
             box-shadow: 0 0 0 0 rgba(255, 122, 0, 0.7) !important;
-            animation: pulso_menu 1.8s infinite cubic-bezier(0.66, 0, 0, 1) !important;
+            animation: pulso_menu_global 1.8s infinite cubic-bezier(0.66, 0, 0, 1) !important;
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
+            z-index: 999999 !important;
         }
 
-        /* Forzamos a que las flechas internas (los vectores SVG) se vuelvan blancas */
+        /* Pintar las flechas internas (vectores SVG) de color blanco */
+        button[aria-label="Collapse sidebar"] svg,
+        button[aria-label="Expand sidebar"] svg,
         button[data-testid="stSidebarCollapseButton"] svg,
         div[data-testid="collapsedControl"] button svg {
             fill: #ffffff !important;
             color: #ffffff !important;
         }
 
-        @keyframes pulso_menu {
+        @keyframes pulso_menu_global {
             to {
                 box-shadow: 0 0 0 15px rgba(255, 122, 0, 0) !important;
             }
