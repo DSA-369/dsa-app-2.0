@@ -18,17 +18,21 @@ except ImportError:
 # ==========================================
 st.set_page_config(
     page_title="DSA 2.0 - Panel de Control",
-    page_icon="https://gaxnteisqvvkjavhtmgm.supabase.co/storage/v1/object/public/tu_bucket/logo_dsa.png", # 🚀 URL de tu logo en Supabase
+    page_icon="https://gaxnteisqvvkjavhtmgm.supabase.co/storage/v1/object/public/directorio-partners/SPOND36.PNG",  # 🚀 LOGO OFICIAL DE LA DSA
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded"  # El menú lateral siempre nacerá abierto
 )
 
-# Paleta de colores DSA (Fondo Negro, Acentos en Azul de Carrera, Naranja Enérgico y Menú Animado)
+# Paleta de colores DSA con Imagen de Fondo HD translúcida estilo r4run
 st.markdown("""
     <style>
-        /* Fondo Principal Oscuro / Negro */
+        /* CONFIGURACIÓN DEL FONDO CON IMAGEN HD Y FILTRO OSCURO */
         .stApp {
-            background-color: #0c0f17;
+            background-image: linear-gradient(rgba(12, 15, 23, 0.88), rgba(12, 15, 23, 0.88)), 
+                              url("URL_DE_TU_IMAGEN_HD"); /* Pendiente por tu enlace HD */
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
             color: #f1f5f9;
         }
         
@@ -97,7 +101,7 @@ st.markdown("""
             margin-bottom: 20px;
         }
 
-        /* 🚀 SELECTORES DE ACCESIBILIDAD UNIVERSALES PARA LAS FLECHAS 🚀 */
+        /* SELECTORES DE ACCESIBILIDAD UNIVERSALES PARA LAS FLECHAS */
         button[aria-label="Collapse sidebar"],
         button[aria-label="Expand sidebar"],
         button[data-testid="stSidebarCollapseButton"],
@@ -113,7 +117,6 @@ st.markdown("""
             z-index: 999999 !important;
         }
 
-        /* Pintar las flechas internas (vectores SVG) de color blanco */
         button[aria-label="Collapse sidebar"] svg,
         button[aria-label="Expand sidebar"] svg,
         button[data-testid="stSidebarCollapseButton"] svg,
