@@ -203,8 +203,8 @@ st.markdown("""
 if "admin_auth" not in st.session_state:
     st.session_state.admin_auth = False
 
-# Palabras clave para identificar módulos que el público SÍ puede ver sin contraseña
-modulos_publicos = ["Historial", "Ranking", "Maestro"]
+# 🚀 CORREGIDO: Cambiamos "Maestro" por "Comunidad" para proteger la nueva ruta pública
+modulos_publicos = ["Historial", "Ranking", "Comunidad"]
 
 # EVALUACIÓN INTELIGENTE: Verifica si la opción elegida contiene alguna de las palabras clave de arriba
 es_modulo_publico = any(palabra in opcion_menu for palabra in modulos_publicos)
@@ -213,7 +213,8 @@ es_modulo_publico = any(palabra in opcion_menu for palabra in modulos_publicos)
 if not es_modulo_publico and not st.session_state.admin_auth:
     st.markdown("<br>", unsafe_allow_html=True)
     st.warning("🔒 **Área Restringida: Acceso exclusivo para Jueces y Staff de la DSA**")
-    st.info("💡 El público puede navegar libremente por el 'Ranking Nacional', 'Historial de Válidas' y 'Maestro de Corredores' en el menú izquierdo.")
+    # 🚀 CORREGIDO: Nombre de módulo actualizado para la guía del público
+    st.info("💡 El público puede navegar libremente por el 'Ranking Nacional', 'Historial de Válidas' y 'Comunidad de Riders' en el menú izquierdo.")
     
     col_pwd, _ = st.columns([4, 6])
     with col_pwd:
@@ -488,9 +489,9 @@ def resolver_ruta_imagen(ruta_raw):
     # Si no encontró nada, devolvemos None
     return None
 # ==========================================
-# MODULO: MAESTRO DE CORREDORES (VERSIÓN DEFINITIVA DE FOTOS)
+# MODULO: MAESTRO DE CORREDORES ahora Comunidad de Riders
 # ==========================================
-if "👥 Maestro de Corredores" in opcion_menu:
+if "👥Comunidad de Riders" in opcion_menu:
     import datetime
     import time
 
