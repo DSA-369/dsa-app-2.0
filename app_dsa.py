@@ -1493,7 +1493,7 @@ elif "🏆 Cuadro de Honor y Rankings" in opcion_menu:
 # MODULO: 🗂️ HISTORIAL DE VÁLIDAS (VISTA PROFESIONAL)
 # ==============================================================================
 elif "🗂️ Historial de Válidas" in opcion_menu:
-    st.title("🗂️ Archivo de Competencias")
+    st.title("🗂️ Historial de Competencias")
     st.markdown("Explora los resultados oficiales, tiempos y brackets de las válidas pasadas.")
 
     if "evento_seleccionado" not in st.session_state:
