@@ -747,7 +747,7 @@ if "👥 Maestro de Corredores" in opcion_menu:
     else:
         col_t, col_b1, col_b2 = st.columns([2, 1, 1])
         with col_t:
-            st.subheader("👥 Registo Global de Corredores")
+            st.subheader("👥 Registro Global de Corredores")
             st.write("Historial y base de datos de atletas registrados oficialmente en el sistema.")
         with col_b1:
             st.write("<br>", unsafe_allow_html=True)
