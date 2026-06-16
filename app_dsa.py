@@ -23,10 +23,9 @@ st.set_page_config(
     initial_sidebar_state="expanded"  # El menú lateral siempre nacerá abierto
 )
 
-# 🚀 INYECCIÓN JAVASCRIPT CORREGIDA PARA IPHONE / SAFARI 🚀
+# 🚀 INYECCIÓN JAVASCRIPT PARA COMPATIBILIDAD DE ICONO EN IOS/SAFARI
 st.markdown("""
     <script>
-        // Buscamos si ya inyectamos el ícono para no duplicarlo en cada recarga
         if (!window.parent.document.getElementById("apple-dsa-icon")) {
             const appleLink = window.parent.document.createElement('link');
             appleLink.id = "apple-dsa-icon";
@@ -40,10 +39,10 @@ st.markdown("""
 # Paleta de colores DSA con Imagen de Fondo HD translúcida estilo r4run
 st.markdown("""
     <style>
-        /* CONFIGURACIÓN DEL FONDO CON IMAGEN HD Y FILTRO OSCURO */
+        /* 🚀 CONFIGURACIÓN DEL FONDO CON IMAGEN HD DSA Y FILTRO OSCURO 🚀 */
         .stApp {
             background-image: linear-gradient(rgba(12, 15, 23, 0.88), rgba(12, 15, 23, 0.88)), 
-                              url("URL_DE_TU_IMAGEN_HD"); /* Pendiente por tu enlace HD */
+                              url("https://gaxnteisqvvkjavhtmgm.supabase.co/storage/v1/object/public/directorio-partners/fondodh.jpg");
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
