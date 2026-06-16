@@ -204,7 +204,7 @@ if "admin_auth" not in st.session_state:
     st.session_state.admin_auth = False
 
 # Palabras clave para identificar módulos que el público SÍ puede ver sin contraseña
-modulos_publicos = ["Historial", "Ranking", "Maestro"]
+modulos_publicos = ["Historial", "Ranking", "Comunidad"]
 
 # EVALUACIÓN INTELIGENTE: Verifica si la opción elegida contiene alguna de las palabras clave de arriba
 es_modulo_publico = any(palabra in opcion_menu for palabra in modulos_publicos)
@@ -213,7 +213,7 @@ es_modulo_publico = any(palabra in opcion_menu for palabra in modulos_publicos)
 if not es_modulo_publico and not st.session_state.admin_auth:
     st.markdown("<br>", unsafe_allow_html=True)
     st.warning("🔒 **Área Restringida: Acceso exclusivo para Jueces y Staff de la DSA**")
-    st.info("💡 El público puede navegar libremente por el 'Ranking Nacional', 'Historial de Válidas' y 'Maestro de Corredores' en el menú izquierdo.")
+    st.info("💡 El público puede navegar libremente por el 'Ranking Nacional', 'Historial de Válidas' y 'Comunidad de Riders' en el menú izquierdo.")
     
     col_pwd, _ = st.columns([4, 6])
     with col_pwd:
