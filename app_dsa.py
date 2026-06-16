@@ -174,11 +174,10 @@ st.sidebar.markdown("<hr style='border: 1px solid #1e293b; margin-top: 5px;'/>",
 # ==========================================
 # 4. NAVEGACIÓN MODULAR (RANKING EN SEGUNDO LUGAR)
 # ==========================================
-st.sidebar.title("🏁 Menú de Carrera")
 opcion_menu = st.sidebar.radio(
-    "Navegación:",
+    "Navegación / DSA App",
     [
-        "👥 Maestro de Corredores",
+        "👥Comunidad de Riders",  # 🚀 NUEVO: En primera posición y con nuevo nombre
         "🗂️ Historial de Válidas",
         "🌍 Ranking Nacional",
         "📝 Inscripción de Válida",
