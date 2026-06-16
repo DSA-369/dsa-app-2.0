@@ -19,7 +19,8 @@ except ImportError:
 st.set_page_config(
     page_title="DSA 2.0 - Panel de Control",
     page_icon="🏁",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"  # 🚀 FORZA A QUE NAZCA ABIERTO
 )
 
 # Paleta de colores DSA (Fondo Negro, Acentos en Azul de Carrera, Naranja Enérgico y Menú Animado)
