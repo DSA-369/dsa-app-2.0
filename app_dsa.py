@@ -178,9 +178,9 @@ st.sidebar.title("🏁 Menú de Carrera")
 opcion_menu = st.sidebar.radio(
     "Navegación:",
     [
+        "👥 Maestro de Corredores",
         "🗂️ Historial de Válidas",
         "🌍 Ranking Nacional",
-        "👥 Maestro de Corredores",
         "📝 Inscripción de Válida",
         "⏱️ Cronometraje en Pista",
         "📊 Resultados y Brackets",
