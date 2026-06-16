@@ -18,10 +18,24 @@ except ImportError:
 # ==========================================
 st.set_page_config(
     page_title="DSA 2.0 - Panel de Control",
-    page_icon="https://gaxnteisqvvkjavhtmgm.supabase.co/storage/v1/object/public/directorio-partners/SPOND36.PNG",  # 🚀 LOGO OFICIAL DE LA DSA
+    page_icon="https://gaxnteisqvvkjavhtmgm.supabase.co/storage/v1/object/public/directorio-partners/SPOND36.PNG",  # Logo Oficial
     layout="wide",
     initial_sidebar_state="expanded"  # El menú lateral siempre nacerá abierto
 )
+
+# 🚀 INYECCIÓN JAVASCRIPT CORREGIDA PARA IPHONE / SAFARI 🚀
+st.markdown("""
+    <script>
+        // Buscamos si ya inyectamos el ícono para no duplicarlo en cada recarga
+        if (!window.parent.document.getElementById("apple-dsa-icon")) {
+            const appleLink = window.parent.document.createElement('link');
+            appleLink.id = "apple-dsa-icon";
+            appleLink.rel = 'apple-touch-icon';
+            appleLink.href = 'https://gaxnteisqvvkjavhtmgm.supabase.co/storage/v1/object/public/directorio-partners/SPOND36.PNG';
+            window.parent.document.head.appendChild(appleLink);
+        }
+    </script>
+""", unsafe_allow_html=True)
 
 # Paleta de colores DSA con Imagen de Fondo HD translúcida estilo r4run
 st.markdown("""
