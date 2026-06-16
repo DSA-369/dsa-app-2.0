@@ -18,9 +18,9 @@ except ImportError:
 # ==========================================
 st.set_page_config(
     page_title="DSA 2.0 - Panel de Control",
-    page_icon="🏁",
+    page_icon="https://gaxnteisqvvkjavhtmgm.supabase.co/storage/v1/object/public/tu_bucket/logo_dsa.png", # 🚀 URL de tu logo en Supabase
     layout="wide",
-    initial_sidebar_state="expanded"  # 🚀 FORZA A QUE NAZCA ABIERTO
+    initial_sidebar_state="expanded"
 )
 
 # Paleta de colores DSA (Fondo Negro, Acentos en Azul de Carrera, Naranja Enérgico y Menú Animado)
