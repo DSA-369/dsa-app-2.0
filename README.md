@@ -32,5 +32,5 @@ Para ejecutar el panel de control de la DSA 2.0 en un entorno de desarrollo loca
 
 1. **Clonar el repositorio:**
    ```bash
-   git clone [https://github.com/tu-usuario/dsa-app-2.0.git](https://github.com/tu-usuario/dsa-app-2.0.git)
-   cd dsa-app-2.0
+   git clone https://github.com/tu-usuario/dsa-app-2.0.git
+cd dsa-app-2.0
