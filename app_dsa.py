@@ -42,7 +42,7 @@ st.markdown("""
         /* 🚀 CONFIGURACIÓN DEL FONDO CON IMAGEN HD DSA Y FILTRO OSCURO 🚀 */
         .stApp {
             background-image: linear-gradient(rgba(12, 15, 23, 0.88), rgba(12, 15, 23, 0.88)), 
-                              url("https://gaxnteisqvvkjavhtmgm.supabase.co/storage/v1/object/public/directorio-partners/fondodh.jpg");
+                              url(https://gaxnteisqvvkjavhtmgm.supabase.co/storage/v1/object/public/directorio-partners/fondodh2.jpg);
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
