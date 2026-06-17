@@ -235,7 +235,7 @@ if not es_modulo_publico and not st.session_state.admin_auth:
     with col_pwd:
         pwd = st.text_input("🔑 Ingresa la clave de administración:", type="password")
         if st.button("Desbloquear Sistema"):
-            if pwd == "dsa2026":  # <--- AQUÍ PUEDES CAMBIAR TU CONTRASEÑA
+            if pwd == st.secrets["ADMIN_PASSWORD"]:  # <--- AQUÍ PUEDES CAMBIAR TU CONTRASEÑA
                 st.session_state.admin_auth = True
                 st.success("✅ Acceso concedido.")
                 time.sleep(1)
