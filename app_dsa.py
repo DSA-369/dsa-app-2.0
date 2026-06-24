@@ -193,8 +193,9 @@ st.sidebar.markdown("<hr style='border: 1px solid #1e293b; margin-top: 5px;'/>",
 opcion_menu = st.sidebar.radio(
     "Navegación / DSA App",
     [
-        "👥Comunidad de Riders",  # 🚀 NUEVO: En primera posición y con nuevo nombre
-        "🗂️ Historial de Válidas",
+                                     
+        "🗂️ Historial de Válidas", # 🚀 NUEVO: En primera posición y con nuevo nombre
+        "👥Comunidad de Riders",
         "🌍 Ranking Nacional",
         "📝 Inscripción de Válida",
         "⏱️ Cronometraje en Pista",
